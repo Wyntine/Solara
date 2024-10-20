@@ -28,7 +28,8 @@ export class Command<Type extends CommandType = CommandType> {
 
   private commandPath: string | undefined;
   private commandFileName: string | undefined;
-  private commandNames: string[] = [];
+  // TODO: Complete the language mapper system.
+  // private commandNames: string[] = [];
 
   constructor(options: CommandOptions<Type>) {
     this.type = options.type;

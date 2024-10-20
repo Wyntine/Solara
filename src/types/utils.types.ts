@@ -14,8 +14,8 @@ import type {
 } from "./files.types.js";
 import type { JsonDatabaseController } from "../handlers/database/controllers/jsonController.js";
 import type { YamlDatabaseController } from "../handlers/database/controllers/yamlController.js";
-import type { Language } from "../handlers/language.js";
 import type { Command } from "../classes/command.js";
+import type { Language } from "../classes/language.js";
 
 export type FixedSizeArray<T, N extends number, R extends T[] = []> =
   R["length"] extends N ? R : FixedSizeArray<T, N, [T, ...R]>;

@@ -40,8 +40,8 @@ import type {
 import { commandLogger } from "../handlers/logger.js";
 import { client } from "./client.js";
 import { isArray } from "@wyntine/verifier";
-import type { Language } from "../handlers/language.js";
 import type { Command } from "../classes/command.js";
+import type { Language } from "../classes/language.js";
 
 export function isCommandExecutable({
   command,
