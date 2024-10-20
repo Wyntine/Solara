@@ -1,0 +1,11 @@
+# Base files
+
+node_modules
+
+# Extra files
+
+config.yml
+databases
+src/commands/tepki.ts
+src/handlers/database/tempDatabase.ts
+src/events/message.ts

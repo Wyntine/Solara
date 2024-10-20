@@ -1,0 +1,7 @@
+bot:
+  token: "bot-token"
+  defaultLanguage: "tr"
+  developers:
+    - "dev-id"
+commands:
+  defaultPrefix: ">"
