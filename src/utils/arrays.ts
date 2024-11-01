@@ -9,7 +9,7 @@ export function crossArrayExecution<Item1, Item2>(
     const secondItem = array2.at(index);
 
     if (!secondItem) {
-      return systemLogger.throw("Second array don't have sufficent length.");
+      return systemLogger.throw("Second array don't have sufficient length.");
     }
 
     executionFunction(item1, secondItem, index);
