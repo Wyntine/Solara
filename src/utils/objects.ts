@@ -9,6 +9,16 @@ export function removeKey<Data, Key extends keyof Data>(
   return rest;
 }
 
+export function removeMultipleKeys<Data, Keys extends keyof Data>(
+  data: Data,
+  keys: Keys[],
+): Omit<Data, Keys> {
+  return keys.reduce(
+    (total, key) => removeKey(total, key as keyof typeof data) as Data,
+    data,
+  );
+}
+
 export function pruneObject<Data>(data: Data): Data {
   if (!isObject(data)) return data;
 
@@ -31,4 +41,24 @@ export function pruneObject<Data>(data: Data): Data {
   }
 
   return prunedData as Data;
+}
+
+export function getInnerObjectKey<Output>(
+  data: unknown,
+  keys: string[],
+): Output | undefined {
+  let tempData = data;
+
+  for (const key of keys) {
+    if (tempData === null || typeof tempData !== "object" || !(key in tempData))
+      return;
+
+    const newData: unknown = tempData[key as keyof typeof tempData];
+
+    if (newData === undefined || newData === null) return;
+
+    tempData = newData;
+  }
+
+  return tempData as Output;
 }
