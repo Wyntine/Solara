@@ -1,5 +1,5 @@
 import { registerCommands } from "../handlers/command.js";
-import { Event } from "../handlers/event.js";
+import { Event } from "../classes/event.js";
 import { systemLogger } from "../handlers/logger.js";
 
 export default new Event({

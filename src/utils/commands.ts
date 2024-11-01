@@ -141,7 +141,7 @@ export class CommandHelper<Type extends CommandType> {
     return (
       this.isMessageInteraction() ? this.interaction.author
       : this.isCommandInteraction() ? this.interaction.user
-      : commandLogger.throw("Interaction type is not detected")
+      : commandLogger.throw("Interaction type could not be determined")
     );
   }
 
@@ -378,8 +378,7 @@ export class CommandHelper<Type extends CommandType> {
     let option: string | Nullable<Required, Data> | undefined;
 
     if (this.interaction instanceof Message) {
-      const optionMap = this.command.optionMap; // createOptionMap(this.command.slashCommandData!);
-      // console.log("optionMap", optionMap);
+      const optionMap = this.command.optionMap;
 
       if (!optionMap) {
         return commandLogger.throw(
@@ -538,11 +537,10 @@ function groupOptions(slashOptions: ToAPIApplicationCommandOptions[]) {
   };
 }
 
-// TODO: Add language support
 function booleanParser(input: string | undefined): boolean | undefined {
   return (
-    input === "true" ? true
-    : input === "false" ? false
+    input === "True" ? true
+    : input === "False" ? false
     : undefined
   );
 }

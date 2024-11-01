@@ -1,6 +1,6 @@
 import { getCommand } from "../handlers/command.js";
 import { userDatabase } from "../handlers/database.js";
-import { Event } from "../handlers/event.js";
+import { Event } from "../classes/event.js";
 import { getLanguage } from "../handlers/language.js";
 import { CommandHelper, isCommandExecutable } from "../utils/commands.js";
 

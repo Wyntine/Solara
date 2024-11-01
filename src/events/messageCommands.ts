@@ -1,5 +1,5 @@
 import { config } from "../handlers/config.js";
-import { Event } from "../handlers/event.js";
+import { Event } from "../classes/event.js";
 import { getLanguage } from "../handlers/language.js";
 import { CommandHelper, isCommandExecutable } from "../utils/commands.js";
 import { userDatabase } from "../handlers/database.js";

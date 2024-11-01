@@ -9,3 +9,4 @@ databases
 src/commands/tepki.ts
 src/handlers/database/tempDatabase.ts
 src/events/message.ts
+src/temp
