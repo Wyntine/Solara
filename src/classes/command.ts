@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from "discord.js";
+import { Locale, SlashCommandBuilder, type LocalizationMap } from "discord.js";
 import { commandLogger } from "../handlers/logger.js";
 import {
   type MessageCommandOptions,
@@ -6,9 +6,13 @@ import {
   type CommandOptions,
   CommandType,
   type OptionMap,
+  type LanguageCommandTexts,
+  type FinalLanguageBaseCommandTexts,
 } from "../types/files.types.js";
 import { createOptionMap } from "../utils/commands.js";
 import path from "path";
+import { getCommandText } from "../handlers/language.js";
+import { compileSlashCommand } from "../handlers/command.js";
 
 export class Command<Type extends CommandType = CommandType> {
   public type: Type;
@@ -28,8 +32,11 @@ export class Command<Type extends CommandType = CommandType> {
 
   private commandPath: string | undefined;
   private commandFileName: string | undefined;
-  // TODO: Complete the language mapper system.
-  // private commandNames: string[] = [];
+  private commandNames: [Locale, string][] = [];
+  private defaultName: string | undefined;
+  private commandTexts:
+    | LanguageCommandTexts<FinalLanguageBaseCommandTexts>
+    | undefined;
 
   constructor(options: CommandOptions<Type>) {
     this.type = options.type;
@@ -39,10 +46,6 @@ export class Command<Type extends CommandType = CommandType> {
         typeof options.slashCommandData === "function" ?
           options.slashCommandData(new SlashCommandBuilder())
         : options.slashCommandData) as SlashCommandBuilder;
-
-      // TODO: Complete the option map
-
-      this.optionMap = createOptionMap(this.slashCommandData);
     }
 
     if (options.messageCommandData)
@@ -68,9 +71,58 @@ export class Command<Type extends CommandType = CommandType> {
 
   //* Public methods
 
+  public setCommandTexts(
+    texts: LanguageCommandTexts<FinalLanguageBaseCommandTexts>,
+  ): void {
+    this.commandTexts = texts;
+  }
+
+  public reloadOptionMap(): void {
+    const slashData = this.slashCommandData;
+
+    if (slashData) this.optionMap = createOptionMap(slashData);
+  }
+
+  public getCommandTexts(): LanguageCommandTexts<FinalLanguageBaseCommandTexts> {
+    const texts = this.commandTexts;
+
+    if (!texts) {
+      return commandLogger.throw("No command texts found.");
+    }
+
+    return texts;
+  }
+
+  public compileLangData(): void {
+    const commandName = this.getCommandFileName();
+    const commandTexts = getCommandText(commandName);
+
+    if (!commandTexts) {
+      return commandLogger.throw(
+        `Empty command text data on command '${commandName}'`,
+      );
+    }
+
+    this.setCommandTexts(commandTexts);
+    this.setCommandNames(commandTexts.name, commandTexts.name_localizations);
+
+    if (!this.slashCommandData) return;
+
+    this.slashCommandData = compileSlashCommand(
+      this.slashCommandData,
+      commandTexts,
+    );
+  }
+
+  public setCommandNames(defaultName: string, names: LocalizationMap): void {
+    this.commandNames = Object.entries(names) as [Locale, string][];
+    this.defaultName = defaultName;
+  }
+
   public listAllNames(): string[] {
     return [
-      // TODO: Add this functionality -> ...this.getLanguageDataArray().map((lang) => lang.name),
+      this.defaultName,
+      ...this.commandNames.map(([, name]) => name),
       ...(this.messageCommandData?.aliases ?? []),
       this.slashCommandData?.name,
     ].filter((text) => typeof text === "string");

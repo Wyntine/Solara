@@ -4,6 +4,7 @@ import type {
   ClientEvents,
   InteractionResponse,
   Locale,
+  LocalizationMap,
   Message,
   SlashCommandBooleanOption,
   SlashCommandBuilder,
@@ -77,6 +78,11 @@ export type SlashBuilders =
   | SlashCommandSubcommandGroupBuilder
   | SlashCommandSubcommandsOnlyBuilder;
 
+export type AvailableSlashCommandOptions =
+  | SlashCommandSubcommandGroupBuilder
+  | SlashCommandSubcommandBuilder
+  | OptionBuilders;
+
 export type SlashBuilder = (builder: SlashCommandBuilder) => SlashBuilders;
 
 export interface MessageCommandOptions {
@@ -144,10 +150,46 @@ export type OptionBuilders =
 
 //* Languages
 
-export interface LanguageOptions {
+//? Language texts
+
+export interface LanguageOptions<Data> {
   languages: Locale[];
   texts: LanguageTexts;
-  commandTexts: StringMap<LanguageCommandTexts>;
+  commandTexts: StringMap<LanguageCommandTexts<Data>>;
+}
+
+export type LanguageOptionsOnlyTexts<Data> = {
+  options?: LanguageOptionTextData<Data>[];
+} & Data;
+
+export type LanguageOptionTextData<Data> = {
+  choices?: Data extends FinalLanguageBaseCommandTexts ?
+    Partial<FinalLanguageBaseCommandTexts>[]
+  : string[];
+} & Data;
+
+export type LanguageSubcommandsOnlyTexts<Data> = {
+  subcommands?: LanguageSubcommandTexts<Data>[];
+  subcommandGroups?: LanguageSubcommandGroupTexts<Data>[];
+} & Data;
+
+export type LanguageSubcommandTexts<Data> = {
+  options?: LanguageOptionTextData<Data>[];
+} & Data;
+
+export type LanguageSubcommandGroupTexts<Data> = {
+  subcommands: LanguageSubcommandTexts<Data>[];
+} & Data;
+
+export type LanguageCommandTexts<Data> =
+  | LanguageOptionsOnlyTexts<Data>
+  | LanguageSubcommandsOnlyTexts<Data>;
+
+//? Language text types
+
+export interface CompiledLanguageBaseCommandTexts {
+  name_localizations: LocalizationMap;
+  description_localizations: LocalizationMap;
 }
 
 export interface LanguageBaseCommandTexts {
@@ -155,30 +197,9 @@ export interface LanguageBaseCommandTexts {
   description: string;
 }
 
-export interface LanguageOptionsOnlyTexts extends LanguageBaseCommandTexts {
-  options?: LanguageOptionTextData[];
-}
-
-export interface LanguageOptionTextData extends LanguageBaseCommandTexts {
-  choices?: string[];
-}
-
-export interface LanguageSubcommandsOnlyTexts extends LanguageBaseCommandTexts {
-  subcommands?: LanguageSubcommandTexts[];
-  subcommandGroups?: LanguageSubcommandGroupTexts[];
-}
-
-export interface LanguageSubcommandTexts extends LanguageBaseCommandTexts {
-  options?: LanguageOptionTextData[];
-}
-
-export interface LanguageSubcommandGroupTexts extends LanguageBaseCommandTexts {
-  subcommands: LanguageSubcommandTexts[];
-}
-
-export type LanguageCommandTexts =
-  | LanguageOptionsOnlyTexts
-  | LanguageSubcommandsOnlyTexts;
+export interface FinalLanguageBaseCommandTexts
+  extends CompiledLanguageBaseCommandTexts,
+    LanguageBaseCommandTexts {}
 
 // TODO: Complete langauge and command texts.
 export interface LanguageTexts {
@@ -202,6 +223,12 @@ export interface LanguageTexts {
 
 export type GetTextResult<Key extends keyof LanguageTexts | undefined> =
   Key extends string ? LanguageTexts[Key] : LanguageTexts;
+
+export type GetCommandTextResult<
+  Key extends keyof LanguageCommandTexts<LanguageBaseCommandTexts> | undefined,
+> =
+  Key extends string ? LanguageCommandTexts<LanguageBaseCommandTexts>[Key]
+  : StringMap<LanguageCommandTexts<LanguageBaseCommandTexts>>;
 
 export type Replacer<StringSize extends number> = (
   ...strings: FixedSizeArray<string, StringSize>
