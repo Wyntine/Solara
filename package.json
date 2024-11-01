@@ -43,9 +43,11 @@
     "url": "https://github.com/Wyntine/Solara/issues"
   },
   "dependencies": {
+    "@types/lodash": "^4.17.12",
     "@wyntine/verifier": "1.0.0-beta.3",
     "chalk": "^5.3.0",
     "discord.js": "^14.15.3",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.1.0",
+    "lodash": "^4.17.21"
   }
 }
