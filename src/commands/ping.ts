@@ -4,11 +4,11 @@ import { infoEmbed } from "../utils/embeds.js";
 
 export default new Command({
   type: CommandType.Combined,
-  slashCommandData: (command) =>
-    command.setName("ping").setDescription("Shows ping information."),
   execute: async ({ interaction, language, client }) => {
     const botPing = client.ws.ping.toString();
-    const pingMessage = language.getText("ping")(botPing);
+
+    const texts = language.getText();
+    const pingMessage = texts.ping(botPing);
 
     await interaction.reply({
       embeds: [infoEmbed(pingMessage)],

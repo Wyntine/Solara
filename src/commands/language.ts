@@ -10,13 +10,7 @@ import { Command } from "../classes/command.js";
 // TODO: Complete the language support
 export default new Command({
   type: CommandType.Combined,
-  slashCommandData: (command) =>
-    command
-      .setName("language")
-      .setDescription("Sets bot language for you")
-      .addStringOption((option) =>
-        option.setName("new-lang").setDescription("The language to use"),
-      ),
+  slashCommandData: (command) => command.addStringOption((option) => option),
   execute: ({ helpers, language }) => {
     const newLanguage = helpers.getStringOption("new-lang") as
       | Locale

@@ -5,38 +5,14 @@ export default new Command({
   type: CommandType.Combined,
   slashCommandData: (builder) =>
     builder
-      .setName("owo")
-      .setDescription("Manages owo reminder")
+      .addSubcommand((subcommand) => subcommand)
       .addSubcommand((subcommand) =>
-        subcommand.setName("list").setDescription("Lists reminders"),
+        subcommand.addStringOption((reminders) => reminders.setRequired(false)),
       )
       .addSubcommand((subcommand) =>
         subcommand
-          .setName("enable")
-          .setDescription("Enables selected or all reminders")
-          .addStringOption((reminders) =>
-            reminders
-              .setName("reminders")
-              .setDescription("Reminders to enable (seperated with spaces)")
-              .setRequired(false),
-          ),
-      )
-      .addSubcommand((subcommand) =>
-        subcommand
-          .setName("disable")
-          .setDescription("Disables selected or all reminders")
-          .addStringOption((reminders) =>
-            reminders
-              .setName("reminders")
-              .setDescription("Reminders to disable (seperated with spaces)")
-              .setRequired(false),
-          ),
-      )
-      .addSubcommand((subcommand) =>
-        subcommand.setName("on").setDescription("Enables all reminders"),
-      )
-      .addSubcommand((subcommand) =>
-        subcommand.setName("off").setDescription("Disables all reminders"),
+          .addStringOption((reminders) => reminders.setRequired(false))
+          .addBooleanOption((option) => option),
       ),
   execute({ helpers }) {
     helpers.useCommandRunners(
