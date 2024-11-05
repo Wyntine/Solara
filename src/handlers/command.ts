@@ -1,3 +1,7 @@
+import { Command } from "../classes/command.js";
+import { commandLogger } from "./logger.js";
+import { isArray } from "@wyntine/verifier";
+import { readClassDirectory } from "../utils/readClassDirectory.js";
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
 /**
@@ -5,15 +9,6 @@
  * TODO - I do not think it is possible because of discord.js typings
  */
 
-import {
-  Client,
-  SlashCommandBuilder,
-  SlashCommandSubcommandBuilder,
-  SlashCommandSubcommandGroupBuilder,
-} from "discord.js";
-import { readClassDirectory } from "../utils/readClassDirectory.js";
-import { commandLogger } from "./logger.js";
-import { Command } from "../classes/command.js";
 import type {
   AvailableSlashCommandOptions,
   FinalLanguageBaseCommandTexts,
@@ -22,7 +17,12 @@ import type {
   LanguageSubcommandGroupTexts,
   LanguageSubcommandTexts,
 } from "../types/files.types.js";
-import { isArray } from "@wyntine/verifier";
+import {
+  Client,
+  SlashCommandBuilder,
+  SlashCommandSubcommandBuilder,
+  SlashCommandSubcommandGroupBuilder,
+} from "discord.js";
 
 let commands: Command[] = [];
 const commandsDir = "commands";

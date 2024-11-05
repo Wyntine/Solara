@@ -1,7 +1,7 @@
-import { writeFileSync, readFileSync, existsSync } from "fs";
-import { ControllerModel, type DataSetter } from "../controllerModel.js";
 import { dump, load } from "js-yaml";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 import { pruneObject } from "../../../utils/objects.js";
+import { ControllerModel, type DataSetter } from "../controllerModel.js";
 
 export class YamlDatabaseController<Data> implements ControllerModel<Data> {
   private data: Data;

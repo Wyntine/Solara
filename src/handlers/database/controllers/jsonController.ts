@@ -1,6 +1,6 @@
-import { writeFileSync, readFileSync, existsSync } from "fs";
-import { ControllerModel, type DataSetter } from "../controllerModel.js";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 import { pruneObject } from "../../../utils/objects.js";
+import { ControllerModel, type DataSetter } from "../controllerModel.js";
 
 export class JsonDatabaseController<Data> implements ControllerModel<Data> {
   private data: Data;

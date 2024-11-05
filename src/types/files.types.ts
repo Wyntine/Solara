@@ -21,10 +21,10 @@ import type {
   SlashCommandUserOption,
 } from "discord.js";
 import type { FixedSizeArray, OptionTypes, StringMap } from "./utils.types.js";
-import type { ObjectVerifier } from "@wyntine/verifier";
-import type { CommandHelper } from "../utils/commands.js";
 import type { Command } from "../classes/command.js";
+import type { CommandHelper } from "../utils/commands.js";
 import type { Language } from "../classes/language.js";
+import type { ObjectVerifier } from "@wyntine/verifier";
 
 //* Events
 

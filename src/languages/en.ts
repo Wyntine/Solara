@@ -1,6 +1,6 @@
-import { Locale } from "discord.js";
 import { createReplacer } from "../utils/strings.js";
 import { Language } from "../classes/language.js";
+import { Locale } from "discord.js";
 
 export default new Language({
   languages: [Locale.EnglishGB, Locale.EnglishUS],

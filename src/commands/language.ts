@@ -1,11 +1,11 @@
-import type { Locale } from "discord.js";
-import { userDatabase } from "../handlers/database.js";
-import { getLanguage, getLanguages } from "../handlers/language.js";
+import { Command } from "../classes/command.js";
 import { CommandType } from "../types/files.types.js";
 import { errorEmbed, infoEmbed, successEmbed } from "../utils/embeds.js";
-import { strJoin } from "../utils/strings.js";
+import { getLanguage, getLanguages } from "../handlers/language.js";
 import { removeKey } from "../utils/objects.js";
-import { Command } from "../classes/command.js";
+import { strJoin } from "../utils/strings.js";
+import { userDatabase } from "../handlers/database.js";
+import type { Locale } from "discord.js";
 
 // TODO: Complete the language support
 export default new Command({

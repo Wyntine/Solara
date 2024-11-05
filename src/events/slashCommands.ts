@@ -1,8 +1,8 @@
-import { getCommand } from "../handlers/command.js";
-import { userDatabase } from "../handlers/database.js";
-import { Event } from "../classes/event.js";
-import { getLanguage } from "../handlers/language.js";
 import { CommandHelper, isCommandExecutable } from "../utils/commands.js";
+import { Event } from "../classes/event.js";
+import { getCommand } from "../handlers/command.js";
+import { getLanguage } from "../handlers/language.js";
+import { userDatabase } from "../handlers/database.js";
 
 export default new Event({
   category: "interactionCreate",

@@ -12,10 +12,11 @@ import type {
   CommandInteractionType,
   CommandType,
 } from "./files.types.js";
-import type { JsonDatabaseController } from "../handlers/database/controllers/jsonController.js";
-import type { YamlDatabaseController } from "../handlers/database/controllers/yamlController.js";
+
 import type { Command } from "../classes/command.js";
+import type { JsonDatabaseController } from "../handlers/database/controllers/jsonController.js";
 import type { Language } from "../classes/language.js";
+import type { YamlDatabaseController } from "../handlers/database/controllers/yamlController.js";
 
 export type FixedSizeArray<T, N extends number, R extends T[] = []> =
   R["length"] extends N ? R : FixedSizeArray<T, N, [T, ...R]>;

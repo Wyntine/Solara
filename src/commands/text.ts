@@ -1,7 +1,7 @@
-// import { PermissionFlagsBits } from "discord.js";
 import { Command } from "../classes/command.js";
 import { CommandType } from "../types/files.types.js";
 import { errorEmbed } from "../utils/embeds.js";
+// import { PermissionFlagsBits } from "discord.js";
 
 export default new Command({
   type: CommandType.Combined,

@@ -1,7 +1,6 @@
+import { checkDatabaseFolder } from "./handlers/database/database.js";
 import { client } from "./utils/client.js";
 import { config } from "./handlers/config.js";
-import { checkDatabaseFolder } from "./handlers/database/database.js";
-
 import { registerEvents } from "./handlers/event.js";
 import { registerLangs } from "./handlers/language.js";
 
