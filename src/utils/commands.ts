@@ -1,3 +1,7 @@
+import { client } from "./client.js";
+import { commandLogger } from "../handlers/logger.js";
+import { config } from "../handlers/config.js";
+import { isArray } from "@wyntine/verifier";
 import {
   ChatInputCommandInteraction,
   GuildMember,
@@ -13,7 +17,6 @@ import {
   type MessageReplyOptions,
   type ToAPIApplicationCommandOptions,
 } from "discord.js";
-import { config } from "../handlers/config.js";
 import {
   OptionTypeMap,
   OptionTypes,
@@ -37,16 +40,29 @@ import type {
   OptionMap,
   Options,
 } from "../types/files.types.js";
-import { commandLogger } from "../handlers/logger.js";
-import { client } from "./client.js";
-import { isArray } from "@wyntine/verifier";
 import type { Command } from "../classes/command.js";
 import type { Language } from "../classes/language.js";
 
-export function isCommandExecutable({
-  command,
-  interaction,
-}: CommandExecutableCheckOptions): boolean {
+/**
+ * Checks if a command is executable based on various conditions.
+ *
+ * @param options - The options for checking command executability.
+ * @param options.command - The command to check.
+ * @param options.interaction - The interaction that triggered the command.
+ * @returns `true` if the command is executable, `false` otherwise.
+ *
+ * The function checks the following conditions:
+ * - If the command is a slash command and the interaction is a message, or vice versa.
+ * - If the interaction is in a guild and the command has guild access restrictions.
+ * - If the command is restricted to certain guilds or excluded from certain guilds.
+ * - If the command is developer-only and the user is not a developer.
+ * - If the bot or user lacks the necessary permissions to execute the command.
+ */
+export function isCommandExecutable(
+  options: CommandExecutableCheckOptions,
+): boolean {
+  const { command, interaction } = options;
+
   const {
     guildAccess,
     dmAccess,
@@ -137,14 +153,33 @@ export class CommandHelper<Type extends CommandType> {
     this.language = options.language;
   }
 
+  /**
+   * Retrieves the user associated with the current interaction.
+   *
+   * Depending on the type of interaction, this method returns the appropriate user:
+   * - If the interaction is a message interaction, it returns the author of the message.
+   * - If the interaction is a command interaction, it returns the user who issued the command.
+   * - If the interaction type cannot be determined, it throws an error.
+   *
+   * @returns The user associated with the current interaction.
+   * @throws Will throw an error if the interaction type cannot be determined.
+   */
   public getUser(): User {
     return (
       this.isMessageInteraction() ? this.interaction.author
       : this.isCommandInteraction() ? this.interaction.user
-      : commandLogger.throw("Interaction type could not be determined")
+      : commandLogger.throw("Interaction type could not be determined.")
     );
   }
 
+  /**
+   * Retrieves a string option from the command options.
+   *
+   * @param optionName - The name of the option to retrieve.
+   * @param required - Whether the option is required. Defaults to false.
+   * @returns The value of the option if it exists, otherwise undefined.
+   * @throws Will throw an error if the option is required and not found.
+   */
   public getStringOption<Required extends boolean = false>(
     optionName: string,
     required?: Required,
@@ -152,6 +187,14 @@ export class CommandHelper<Type extends CommandType> {
     return this.getOption(OptionTypes.String, optionName, required);
   }
 
+  /**
+   * Retrieves a boolean option from the command options.
+   *
+   * @param optionName - The name of the option to retrieve.
+   * @param required - Whether the option is required. Defaults to false.
+   * @returns The value of the option if it exists, otherwise undefined.
+   * @throws Will throw an error if the option is required and not found.
+   */
   public getBooleanOption<Required extends boolean = false>(
     optionName: string,
     required?: Required,
@@ -164,6 +207,14 @@ export class CommandHelper<Type extends CommandType> {
     );
   }
 
+  /**
+   * Retrieves a number option from the command options.
+   *
+   * @param optionName - The name of the option to retrieve.
+   * @param required - Whether the option is required. Defaults to false.
+   * @returns The value of the option if it exists, otherwise undefined.
+   * @throws Will throw an error if the option is required and not found.
+   */
   public getNumberOption<Required extends boolean = false>(
     optionName: string,
     required?: Required,
@@ -176,6 +227,14 @@ export class CommandHelper<Type extends CommandType> {
     );
   }
 
+  /**
+   * Retrieves an integer option from the command options.
+   *
+   * @param optionName - The name of the option to retrieve.
+   * @param required - Whether the option is required. Defaults to false.
+   * @returns The value of the option if it exists, otherwise undefined.
+   * @throws Will throw an error if the option is required and not found.
+   */
   public getIntegerOption<Required extends boolean = false>(
     optionName: string,
     required?: Required,
@@ -188,6 +247,14 @@ export class CommandHelper<Type extends CommandType> {
     );
   }
 
+  /**
+   * Retrieves a channel option from the command options.
+   *
+   * @param optionName - The name of the option to retrieve.
+   * @param required - Whether the option is required. Defaults to false.
+   * @returns The value of the option if it exists, otherwise undefined.
+   * @throws Will throw an error if the option is required and not found.
+   */
   public getChannelOption<Required extends boolean = false>(
     optionName: string,
     required?: Required,
@@ -200,6 +267,14 @@ export class CommandHelper<Type extends CommandType> {
     );
   }
 
+  /**
+   * Retrieves a user option from the command options.
+   *
+   * @param optionName - The name of the option to retrieve.
+   * @param required - Whether the option is required. Defaults to false.
+   * @returns The value of the option if it exists, otherwise undefined.
+   * @throws Will throw an error if the option is required and not found.
+   */
   public getUserOption<Required extends boolean = false>(
     optionName: string,
     required?: Required,
@@ -207,6 +282,14 @@ export class CommandHelper<Type extends CommandType> {
     return this.getOption(OptionTypes.User, optionName, required, userParser);
   }
 
+  /**
+   * Retrieves a role option from the command interaction.
+   *
+   * @param optionName - The name of the option to retrieve.
+   * @param required - Whether the option is required. Defaults to false.
+   * @returns The value of the option if it exists, otherwise undefined.
+   * @throws Will throw an error if the option is required and not found.
+   */
   public getRoleOption<Required extends boolean = false>(
     optionName: string,
     required?: Required,
@@ -219,6 +302,14 @@ export class CommandHelper<Type extends CommandType> {
     );
   }
 
+  /**
+   * Retrieves a member option from the command interaction.
+   *
+   * @param optionName - The name of the option to retrieve.
+   * @param required - Whether the option is required. Defaults to false.
+   * @returns The value of the option if it exists, otherwise undefined.
+   * @throws Will throw an error if the option is required and not found.
+   */
   public getMemberOption<Required extends boolean = false>(
     optionName: string,
     required?: Required,
@@ -231,6 +322,14 @@ export class CommandHelper<Type extends CommandType> {
     );
   }
 
+  /**
+   * Retrieves a mentionable option from the interaction.
+   *
+   * @param optionName - The name of the option to retrieve.
+   * @param required - Whether the option is required. Defaults to false.
+   * @returns The value of the option if it exists, otherwise undefined.
+   * @throws Will throw an error if the option is required and not found.
+   */
   public getMentionableOption<Required extends boolean = false>(
     optionName: string,
     required?: Required,
@@ -243,6 +342,12 @@ export class CommandHelper<Type extends CommandType> {
     );
   }
 
+  /**
+   * Retrieves the name of the subcommand from the interaction or command options.
+   *
+   * @returns The name of the subcommand if found, otherwise undefined.
+   * @throws Will throw an error if the option map is not set in the command.
+   */
   public getSubcommandName(): string | undefined {
     if (this.interaction instanceof ChatInputCommandInteraction) {
       return this.interaction.options.getSubcommand();
@@ -271,6 +376,12 @@ export class CommandHelper<Type extends CommandType> {
     return secondArg;
   }
 
+  /**
+   * Retrieves the name of the subcommand group from the interaction or the command's option map.
+   *
+   * @returns The name of the subcommand group if found, otherwise undefined.
+   * @throws Will throw an error if the option map is not set in the command.
+   */
   public getSubcommandGroupName(): string | undefined {
     if (this.interaction instanceof ChatInputCommandInteraction) {
       return this.interaction.options.getSubcommandGroup() ?? undefined;
@@ -297,6 +408,13 @@ export class CommandHelper<Type extends CommandType> {
     return firstArg;
   }
 
+  /**
+   * Executes the provided command runners with the prepared runner data.
+   * If the command runners fail, the optional onFail callback is invoked.
+   *
+   * @param runners - The command runners to execute.
+   * @param onFail - Optional callback function to execute if the command runners fail.
+   */
   public useCommandRunners(
     runners: CommandRunners<Type>,
     onFail?: CommandExecuteFunction<Type>,
@@ -307,6 +425,12 @@ export class CommandHelper<Type extends CommandType> {
     if (!status && onFail) onFail(runnerData);
   }
 
+  /**
+   * Sends a reply to an interaction.
+   *
+   * @param options - The options for the reply, including content and other parameters.
+   * @returns A promise that resolves to the reply of the specified type.
+   */
   public async reply(
     options: HelperReplyOptions<Type>,
   ): Promise<CommandReplyType<Type>> {
@@ -317,6 +441,16 @@ export class CommandHelper<Type extends CommandType> {
 
   //* Private methods
 
+  /**
+   * Prepares and returns the data required for running a command.
+   *
+   * @returns An object containing the following properties:
+   * - `client`: The client instance.
+   * - `interaction`: The interaction instance associated with the command.
+   * - `command`: The command to be executed.
+   * - `helpers`: A reference to the current instance of the class containing helper methods.
+   * - `language`: The language setting for the command execution.
+   */
   private prepareRunnerData() {
     return {
       client,
@@ -327,6 +461,13 @@ export class CommandHelper<Type extends CommandType> {
     };
   }
 
+  /**
+   * Determines the status of a command runner and executes it if available.
+   *
+   * @param runners - An object containing command runners or a function.
+   * @param runnerData - Optional data prepared for the runner. Defaults to the result of `prepareRunnerData()`.
+   * @returns `true` if a command runner was found and executed, otherwise `false`.
+   */
   private getCommandRunnerStatus(
     runners: CommandRunners<Type>,
     runnerData = this.prepareRunnerData(),
@@ -365,6 +506,19 @@ export class CommandHelper<Type extends CommandType> {
     return false;
   }
 
+  /**
+   * Retrieves an option from the interaction or command option map.
+   *
+   * @param optionType - The type of the option.
+   * @param optionName - The name of the option.
+   * @param required - Whether the option is required.
+   * @param optionParser - A parser function for the option.
+   * @returns The retrieved option or throws an error if required and not found.
+   *
+   * @throws Will throw an error if the option map is not set in the command.
+   * @throws Will throw an error if the required option is not found.
+   * @throws Will throw an error if a parser is required but not provided.
+   */
   private getOption<
     Type extends OptionTypes,
     Required extends boolean = false,
@@ -438,6 +592,15 @@ export class CommandHelper<Type extends CommandType> {
     return finalOption!;
   }
 
+  /**
+   * Retrieves the value of a specified option from the command arguments.
+   *
+   * @param optionMap - An array of option objects that define the available options.
+   * @param optionName - The name of the option to retrieve.
+   * @param startIndex - The index to start searching for the option in the arguments. Defaults to 0.
+   * @returns The value of the specified option as a string, or `undefined` if the option is not found.
+   * @throws Will throw an error if the option mapping is not found in the command.
+   */
   private retrieveOption(
     optionMap: Options[],
     optionName: string,
@@ -459,16 +622,47 @@ export class CommandHelper<Type extends CommandType> {
       : newArgs.at(optionIndex);
   }
 
+  /**
+   * Checks if the current interaction is message command.
+   *
+   * @returns Returns true if the interaction is an instance of Message, otherwise false.
+   */
   private isMessageInteraction(): this is CommandHelper<CommandType.Message> {
     return this.interaction instanceof Message;
   }
 
+  /**
+   * Determines if the current interaction is slash command interaction.
+   *
+   * @returns Returns true if the interaction is an instance of ChatInputCommandInteraction, otherwise false.
+   */
   private isCommandInteraction(): this is CommandHelper<CommandType.Slash> {
     return this.interaction instanceof ChatInputCommandInteraction;
   }
 }
 
 // TODO: Create option mapper
+/**
+ * Creates a mapping of command options based on the provided SlashCommandBuilder data.
+ *
+ * @param slashCommandData - The SlashCommandBuilder instance containing command structure and options
+ * @returns An OptionMap object containing mapped command options:
+ *          - If the command has direct options, returns a direct mapping of those options
+ *          - For subcommand groups, returns a nested structure mapping group name -> subcommand name -> options
+ *          - For individual subcommands, returns a mapping of subcommand name -> options
+ *
+ * @example
+ * const command = new SlashCommandBuilder()
+ *   .setName('example')
+ *   .addSubcommandGroup(group =>
+ *     group.setName('group')
+ *          .addSubcommand(sub =>
+ *            sub.setName('sub')
+ *               .addStringOption(opt => opt.setName('option'))))
+ *
+ * const optionMap = createOptionMap(command);
+ * // Results in: { group: { sub: { option: [options] } } }
+ */
 export function createOptionMap(
   slashCommandData: SlashCommandBuilder,
 ): OptionMap {

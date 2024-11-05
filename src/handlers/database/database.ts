@@ -1,13 +1,13 @@
+import { databaseLogger } from "../logger.js";
 import { existsSync, mkdirSync } from "fs";
+import { JsonDatabaseController } from "./controllers/jsonController.js";
+import { YamlDatabaseController } from "./controllers/yamlController.js";
 import {
   DatabaseType,
   type DatabaseControllers,
   type DatabaseOptions,
 } from "../../types/utils.types.js";
-import { databaseLogger } from "../logger.js";
 import { ControllerModel, type DataSetter } from "./controllerModel.js";
-import { JsonDatabaseController } from "./controllers/jsonController.js";
-import { YamlDatabaseController } from "./controllers/yamlController.js";
 
 export class Database<Data, Type extends DatabaseType>
   implements ControllerModel<Data>
@@ -55,6 +55,12 @@ export class Database<Data, Type extends DatabaseType>
   }
 }
 
+/**
+ * Checks if the database folder exists, and creates it if it doesn't.
+ * The folder will be created in the current working directory under "./databases".
+ *
+ * @throws {Error} May throw an error if the process lacks write permissions for the directory.
+ */
 export function checkDatabaseFolder(): void {
   if (!existsSync("./databases")) mkdirSync("./databases");
 }

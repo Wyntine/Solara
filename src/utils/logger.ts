@@ -65,6 +65,13 @@ export class Logger {
     this.log(LogLevel.WARN, messages);
   }
 
+  /**
+   * Throws an error with the provided messages.
+   *
+   * @param messages - The messages to include in the error.
+   * @throws Throws an error with the concatenated messages.
+   * @returns This function never returns as it always throws an error.
+   */
   public throw(...messages: unknown[]): never {
     this.error();
     throw new Error(messages.join(" "));

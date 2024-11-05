@@ -1,9 +1,9 @@
-import type { ObjectVerifier } from "@wyntine/verifier";
-import { readFileSync } from "fs";
-import { load } from "js-yaml";
 import { configLogger } from "../handlers/logger.js";
+import { load } from "js-yaml";
+import { readFileSync } from "fs";
 import { watchFile } from "fs";
 import type { ConfigOptions } from "../types/files.types.js";
+import type { ObjectVerifier } from "@wyntine/verifier";
 
 export class Config<Data> {
   private path: string;
@@ -24,6 +24,12 @@ export class Config<Data> {
     });
   }
 
+  /**
+   * Retrieves the configuration data.
+   *
+   * @returns The configuration data.
+   * @throws Will throw an error if no configuration data is available.
+   */
   public get(): Data {
     if (!this.data) {
       return configLogger.throw("No config data available.");
@@ -32,6 +38,11 @@ export class Config<Data> {
     return this.data;
   }
 
+  /**
+   * Reloads and parses a YAML configuration file.
+   *
+   * @returns The parsed data from the YAML file, or undefined if an error occurs.
+   */
   private reloadYaml(): Data | undefined {
     try {
       const fileData = readFileSync(this.path, "utf-8");

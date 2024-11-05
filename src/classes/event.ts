@@ -1,8 +1,9 @@
-import type { ClientEvents } from "discord.js";
 import type {
   EventExecuteFunction,
   EventOptions,
 } from "../types/files.types.js";
+
+import type { ClientEvents } from "discord.js";
 
 export class Event<Category extends keyof ClientEvents = keyof ClientEvents> {
   public category: Category;
@@ -17,11 +18,21 @@ export class Event<Category extends keyof ClientEvents = keyof ClientEvents> {
     this.execute = eventOptions.execute;
   }
 
+  /**
+   * Disables the event.
+   *
+   * @returns The event instance for method chaining
+   */
   public disable(): this {
     this.enabled = false;
     return this;
   }
 
+  /**
+   * Enables the event instance.
+   *
+   * @returns The current event instance for method chaining
+   */
   public enable(): this {
     this.enabled = true;
     return this;
