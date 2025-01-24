@@ -9,7 +9,8 @@
     "prettier": "prettier -w ./src",
     "eslint": "eslint ./src",
     "typeCheck": "tsc",
-    "start": "tsx ./src/index.ts"
+    "start": "tsx ./src/index.ts",
+    "test": "tsx ./src/test.ts"
   },
   "keywords": [],
   "author": "Wyntine",

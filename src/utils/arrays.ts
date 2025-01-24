@@ -1,4 +1,4 @@
-import { systemLogger } from "../handlers/logger.js";
+import { systemLogger } from "../handlers/logger.ts";
 
 /**
  * Executes a provided function once for each pair of corresponding elements in two arrays.

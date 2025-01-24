@@ -1,28 +1,34 @@
-import { Command } from "../classes/command.js";
-import { commandLogger } from "./logger.js";
-import { isArray } from "@wyntine/verifier";
-import { readClassDirectory } from "../utils/readClassDirectory.js";
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-
-/**
- * TODO: Fix type conflicts and remove @ts-ignore
- * TODO - I do not think it is possible because of discord.js typings
- */
-
-import type {
-  AvailableSlashCommandOptions,
-  FinalLanguageBaseCommandTexts,
-  LanguageCommandTexts,
-  LanguageOptionTextData,
-  LanguageSubcommandGroupTexts,
-  LanguageSubcommandTexts,
-} from "../types/files.types.js";
+import { Command } from "../classes/command.ts";
+import { commandLogger } from "./logger.ts";
 import {
+  readClassFile,
+  scriptFileFilter,
+} from "../utils/readClassDirectory.ts";
+
+import {
+  CommandType,
+  type CommandOptions,
+  type FinalLanguageBaseCommandTexts,
+  type LanguageCommandTexts,
+} from "../types/files.types.ts";
+import {
+  ApplicationCommandOptionType,
+  ApplicationCommandType,
   Client,
-  SlashCommandBuilder,
-  SlashCommandSubcommandBuilder,
-  SlashCommandSubcommandGroupBuilder,
+  CommandInteraction,
+  Message,
+  type RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from "discord.js";
+import { config } from "./config.ts";
+import { OptionCommandTypeMap, type StringMap } from "../types/utils.types.ts";
+import { join } from "path";
+import { readdir } from "fs/promises";
+import { CommandConfig } from "../classes/commandConfig.ts";
+import { Subcommand } from "../classes/subcommand.ts";
+import { SubcommandGroup } from "../classes/subcommandGroup.ts";
+import { convertToSnakeCase, getObjectSize } from "../utils/objects.ts";
+import { getCommandText } from "./language.ts";
+import { CommandHelper } from "../utils/commands.ts";
 
 let commands: Command[] = [];
 const commandsDir = "commands";
@@ -35,237 +41,486 @@ export function getCommand(name: string): Command | undefined {
   return commands.find((command) => command.listAllNames().includes(name));
 }
 
+export function createCommand(): Partial<RESTPostAPIChatInputApplicationCommandsJSONBody> {
+  return {
+    type: ApplicationCommandType.ChatInput,
+  } as const;
+}
+
+export function createSubcommand() {
+  return {
+    type: ApplicationCommandOptionType.Subcommand,
+  } as const;
+}
+
+export function createSubcommandGroup() {
+  return {
+    type: ApplicationCommandOptionType.SubcommandGroup,
+  } as const;
+}
+
+export function prepareMessageCommandHelper(
+  message: Message,
+): CommandHelper<CommandType> | undefined {
+  if (message.author.bot) return;
+
+  const prefix = config.get().commands.defaultPrefix;
+
+  if (!message.content.startsWith(prefix)) return;
+
+  const args = message.content.slice(prefix.length).trim().split(/ +/);
+  const commandName = args.shift()?.toLowerCase();
+
+  if (!commandName) return;
+
+  const command = getCommand(commandName);
+
+  if (!command?.getConfig().enabled) return;
+
+  return new CommandHelper({
+    command,
+    interaction: message,
+    args,
+  });
+}
+
+export function prepareSlashCommandHelper(
+  interaction: CommandInteraction,
+): CommandHelper<CommandType> | undefined {
+  if (interaction.user.bot || !interaction.isChatInputCommand()) return;
+
+  const commandName = interaction.commandName;
+
+  if (!commandName) return;
+
+  const command = getCommand(commandName);
+
+  if (!command?.getConfig().enabled) return;
+
+  return new CommandHelper({
+    command,
+    interaction,
+  });
+}
+
 export async function readCommands(): Promise<Command[]> {
-  const commandVerification = (
-    command: Command,
-    loggedPath: string,
-  ): boolean => {
-    const slashData = command.slashCommandData;
-    const isMessageCommand = command.isMessageOnly();
+  const commands: Command[] = [];
+  const basePath = join("src", commandsDir);
+  const files = (await readdir(basePath, { withFileTypes: true })).filter(
+    (file) => file.isDirectory() || scriptFileFilter(file),
+  );
 
-    if (!isMessageCommand && !slashData) {
-      commandLogger.warn(
-        `Command has missing slash data in "${loggedPath}", creating slash data...`,
+  for (const file of files) {
+    const filePath = join(basePath, file.name);
+    const loggedPath = filePath.slice("src".length + 1);
+
+    if (file.isDirectory()) {
+      const commandText = getCommandText(file.name);
+
+      if (!commandText) {
+        commandLogger.error(
+          `No language texts found for command "${loggedPath}"`,
+        );
+        continue;
+      }
+
+      //! Reading subcommands
+      const config = await readClassFile(
+        CommandConfig,
+        join(loggedPath, "_config.ts"),
       );
-      command.slashCommandData = new SlashCommandBuilder();
+
+      if (!config) {
+        commandLogger.warn(
+          `Invalid or empty command config export in "${loggedPath}"`,
+        );
+      }
+
+      const subFiles = (
+        await readdir(filePath, { withFileTypes: true })
+      ).filter(
+        (file) =>
+          (file.isDirectory() || scriptFileFilter(file)) &&
+          file.name !== "_config.ts",
+      );
+
+      const subcommands: Subcommand[] = [];
+      const subcommandGroups: SubcommandGroup[] = [];
+
+      for (const subFile of subFiles) {
+        const subGroupPath = join(filePath, subFile.name);
+        const subGroupImportPath = join(loggedPath, subFile.name);
+
+        if (subFile.isDirectory()) {
+          //! Reading subcommand group
+
+          const subcommandGroupText =
+            "subcommandGroups" in commandText ?
+              commandText.subcommandGroups[
+                subFile.name as keyof typeof commandText
+              ]
+            : undefined;
+
+          if (!subcommandGroupText) {
+            commandLogger.error(
+              `No language texts found for subcommand group "${loggedPath}"`,
+            );
+            continue;
+          }
+
+          const subcommandGroupConfig = await readClassFile(
+            CommandConfig,
+            join(subGroupImportPath, "_config.ts"),
+          );
+
+          if (!subcommandGroupConfig) {
+            commandLogger.warn(
+              `Invalid or empty subcommand group config export in "${subGroupImportPath}"`,
+            );
+          }
+
+          const subGroupFiles = (
+            await readdir(subGroupPath, {
+              withFileTypes: true,
+            })
+          ).filter(scriptFileFilter);
+
+          const groupSubcommands: Subcommand[] = [];
+
+          for (const subGroupFile of subGroupFiles) {
+            //! Reading subcommands inside subcommand group
+            const subGroupSubImportPath = join(
+              subGroupImportPath,
+              subGroupFile.name,
+            );
+
+            const subcommand = await readClassFile(
+              Subcommand,
+              subGroupSubImportPath,
+            );
+
+            if (!subcommand) {
+              commandLogger.error(
+                `Invalid subcommand export in "${subGroupImportPath}"`,
+              );
+              continue;
+            }
+
+            subcommand.setFilePath(subGroupSubImportPath);
+            const subcommandName = subcommand.getFileName();
+
+            const subcommandText =
+              subcommandGroupText.subcommands[subcommandName];
+
+            if (!subcommandText) {
+              commandLogger.error(
+                `No language texts found for subcommand "${loggedPath}"`,
+              );
+              continue;
+            }
+
+            subcommand.setLangData(subcommandText);
+            groupSubcommands.push(subcommand);
+          }
+
+          if (!groupSubcommands.length) {
+            commandLogger.warn(
+              `No suitable subcommands found in "${subGroupImportPath}"`,
+            );
+            continue;
+          }
+
+          const subcommandGroupInput =
+            subcommandGroupConfig ? { config: subcommandGroupConfig } : {};
+
+          const subcommandGroup = new SubcommandGroup(subcommandGroupInput);
+          subcommandGroup.addSubcommands(groupSubcommands);
+          subcommandGroup.setLangData(subcommandGroupText);
+        } else {
+          //! Reading subcommand
+          const subcommand = await readClassFile(
+            Subcommand,
+            subGroupImportPath,
+          );
+
+          if (!subcommand) {
+            commandLogger.error(
+              `Invalid subcommand export in "${subGroupImportPath}"`,
+            );
+            continue;
+          }
+
+          subcommand.setFilePath(subGroupImportPath);
+          const subcommandName = subcommand.getFileName();
+
+          const subcommandText =
+            "subcommands" in commandText ?
+              commandText.subcommands[subcommandName]
+            : undefined;
+
+          if (!subcommandText) {
+            commandLogger.error(
+              `No language texts found for subcommand "${loggedPath}"`,
+            );
+            continue;
+          }
+
+          subcommand.setLangData(subcommandText);
+          subcommands.push(subcommand);
+        }
+      }
+
+      const commandInput: CommandOptions<CommandType> = {
+        ...(config ? { config } : {}),
+      };
+
+      const command = new Command(commandInput);
+
+      command.addSubcommandGroups(subcommandGroups);
+      command.addSubcommands(subcommands);
+
+      command.setFilePath(loggedPath);
+      command.setLangData();
+      commands.push(command);
+    } else {
+      const command = await readClassFile(Command, loggedPath);
+
+      if (!command) {
+        commandLogger.error(`Invalid command export in "${loggedPath}"`);
+        continue;
+      }
+
+      command.setFilePath(loggedPath);
+      command.setLangData();
+      commands.push(command);
     }
+  }
 
-    command.setCommandPath(loggedPath);
-    command.compileLangData();
-    command.reloadOptionMap();
-
-    return true;
-  };
-
-  return await readClassDirectory(
-    Command,
-    commandsDir,
-    commandLogger,
-    commandVerification,
-  );
+  return commands;
 }
 
-export async function registerCommands(client?: Client<true>): Promise<void> {
-  const newCommands = await readCommands();
-  validateCommandConfigurations(newCommands);
+export async function registerCommands(): Promise<number> {
+  commands = await readCommands();
+  return commands.length;
+}
 
-  if (client) {
-    const slashCommands = newCommands.reduce<SlashCommandBuilder[]>(
-      (total, command) => {
-        const { slashCommandData } = command;
-        return slashCommandData ? [...total, slashCommandData] : total;
-      },
-      [],
-    );
+export async function registerSlashCommands(
+  client?: Client<true>,
+): Promise<void> {
+  validateCommandConfigurations(commands);
+
+  if (client && config.get().commands.registerOnStart) {
+    const slashCommands = commands.reduce<
+      RESTPostAPIChatInputApplicationCommandsJSONBody[]
+    >((total, command) => {
+      const slashCommandData = compileCommand(command);
+      return slashCommandData ? [...total, slashCommandData] : total;
+    }, []);
     await client.application.commands.set(slashCommands);
-  }
-
-  commands = newCommands;
-}
-
-export function compileSlashCommand<Builder extends SlashCommandBuilder>(
-  builder: Builder,
-  data: LanguageCommandTexts<FinalLanguageBaseCommandTexts>,
-): Builder {
-  const newBuilder = compileBaseCommandData(builder, data);
-  const options = builder.options as AvailableSlashCommandOptions[];
-
-  let subcommands = options.filter(
-    (option) => option instanceof SlashCommandSubcommandBuilder,
-  );
-
-  let subcommandGroups = options.filter(
-    (option) => option instanceof SlashCommandSubcommandGroupBuilder,
-  );
-
-  const subcommandOptions: AvailableSlashCommandOptions[] = [
-    ...subcommands,
-    ...subcommandGroups,
-  ];
-
-  let otherOptions = options.filter(
-    (option) => !subcommandOptions.includes(option),
-  );
-
-  if (subcommands.length) {
-    if (!("subcommands" in data)) {
-      return commandLogger.throw("Missing subcommand language data.");
-    }
-
-    subcommands = compileSlashCommandSubcommands(subcommands, data.subcommands);
-  }
-
-  if (subcommandGroups.length) {
-    if (!("subcommandGroups" in data)) {
-      return commandLogger.throw("Missing subcommand groups language data.");
-    }
-
-    subcommandGroups = compileSlashCommandSubcommandGroups(
-      subcommandGroups,
-      data.subcommandGroups,
+    commandLogger.info(
+      `${slashCommands.length.toString()} slash commands registered.`,
     );
-  } else if (otherOptions.length) {
-    if (!("options" in data)) {
-      return commandLogger.throw("Missing options language data.");
-    }
-
-    otherOptions = compileSlashCommandOptions(otherOptions, data.options);
+  } else {
+    commandLogger.warn(
+      "Slash commands are not registered. Set commands.registerOnStart to true in the config to register slash commands.",
+    );
   }
-
-  const finalOptions = [...subcommandGroups, ...subcommands, ...otherOptions];
-
-  // @ts-ignore
-  if (finalOptions.length) newBuilder.options = finalOptions;
-
-  return newBuilder;
 }
 
-function compileSlashCommandSubcommands(
-  subcommands: SlashCommandSubcommandBuilder[],
-  languageData: LanguageSubcommandTexts<FinalLanguageBaseCommandTexts>[],
+export function compileCommand(
+  command: Command,
+): RESTPostAPIChatInputApplicationCommandsJSONBody | undefined {
+  if (command.isMessageOnly()) return;
+
+  const texts = command.getTexts();
+  const newBuilder = compileBaseCommandData(createCommand(), texts);
+
+  if ("options" in texts) {
+    return compileCommandOptions(newBuilder, command, texts.options);
+  }
+
+  const options = [];
+
+  if ("subcommands" in texts) {
+    options.push(...compileSubcommands(command, texts.subcommands));
+  }
+
+  if ("subcommandGroups" in texts) {
+    options.push(...compileSubcommandGroups(command, texts.subcommandGroups));
+  }
+
+  return options.length ? { ...newBuilder, options } : newBuilder;
+}
+
+function compileSubcommandGroups(
+  command: Command,
+  languageSubcommandGroups: StringMap<
+    LanguageCommandTexts<FinalLanguageBaseCommandTexts>
+  >,
 ) {
-  if (subcommands.length !== languageData.length) {
-    return commandLogger.throw("Missing subcommand language data.");
+  const subcommandGroups = command.getSubcommandGroups();
+  const languageSubcommandGroupsLength = Object.keys(
+    languageSubcommandGroups,
+  ).length;
+
+  if (subcommandGroups.length !== languageSubcommandGroupsLength) {
+    return commandLogger.throw(
+      "Missing or different subcommand group language data.",
+    );
   }
 
-  return subcommands.map((subcommand, index) => {
-    const data = languageData.at(index)!;
-    return compileSlashCommandSubcommand(subcommand, data);
-  });
+  if (!subcommandGroups.length) return [];
+
+  const finalSubcommandGroups = [];
+
+  for (const subcommandGroup of subcommandGroups) {
+    const finalSubcommandGroup = compileSubcommandGroup(
+      subcommandGroup,
+      languageSubcommandGroups,
+    );
+    finalSubcommandGroups.push(finalSubcommandGroup);
+  }
+
+  return finalSubcommandGroups;
 }
 
-function compileSlashCommandSubcommandGroups(
-  subcommandGroups: SlashCommandSubcommandGroupBuilder[],
-  languageData: LanguageSubcommandGroupTexts<FinalLanguageBaseCommandTexts>[],
+function compileSubcommandGroup(
+  subcommandGroup: SubcommandGroup,
+  languageSubcommandGroups: StringMap<
+    LanguageCommandTexts<FinalLanguageBaseCommandTexts>
+  >,
 ) {
-  if (subcommandGroups.length !== languageData.length) {
-    return commandLogger.throw("Missing subcommand group language data.");
+  const subcommandGroupName = subcommandGroup.getFileName();
+
+  if (!(subcommandGroupName in languageSubcommandGroups)) {
+    return commandLogger.throw(
+      `Missing language data for subcommand "${subcommandGroupName}"`,
+    );
   }
 
-  return subcommandGroups.map((subcommandGroup, index) => {
-    const data = languageData.at(index)!;
-    return compileSlashCommandSubcommandGroup(subcommandGroup, data);
-  });
-}
-
-function compileSlashCommandOptions(
-  options: AvailableSlashCommandOptions[],
-  languageData: LanguageOptionTextData<FinalLanguageBaseCommandTexts>[],
-) {
-  if (options.length !== languageData.length) {
-    return commandLogger.throw("Missing option language data.");
-  }
-
-  return options.map((subcommandGroup, index) => {
-    const data = languageData.at(index)!;
-    return compileSlashCommandOption(subcommandGroup, data);
-  });
-}
-
-function compileSlashCommandOption<
-  Builder extends AvailableSlashCommandOptions,
->(
-  builder: Builder,
-  languageData: LanguageOptionTextData<FinalLanguageBaseCommandTexts>,
-): Builder {
-  const newBuilder = compileBaseCommandData(builder, languageData);
-
-  if (!("choices" in newBuilder) || !isArray(newBuilder.choices))
-    return newBuilder;
-
-  const choices = languageData.choices;
-
-  if (!choices || newBuilder.choices.length !== choices.length) {
-    return commandLogger.throw("Missing option choice data.");
-  }
-
-  // @ts-ignore
-  newBuilder.choices = newBuilder.choices.map((choice, index) => {
-    const data = choices.at(index)!;
-    return { ...choice, ...data };
-  });
-
-  return newBuilder;
-}
-
-function compileSlashCommandSubcommand<
-  Builder extends SlashCommandSubcommandBuilder,
->(
-  builder: Builder,
-  languageData: LanguageSubcommandTexts<FinalLanguageBaseCommandTexts>,
-): Builder {
-  const newBuilder = compileBaseCommandData(builder, languageData);
-
-  if (!("options" in newBuilder)) return newBuilder;
-
-  const options = languageData.options;
-
-  if (!options || newBuilder.options.length !== options.length) {
-    return commandLogger.throw("Missing options data.");
-  }
-
-  // @ts-ignore
-  newBuilder.options = compileSlashCommandOptions(
-    newBuilder.options as AvailableSlashCommandOptions[],
-    options,
+  const languageSubcommandGroup =
+    languageSubcommandGroups[subcommandGroupName]!;
+  const newBuilder = compileBaseCommandData(
+    createSubcommandGroup(),
+    languageSubcommandGroup,
   );
 
-  return newBuilder;
-}
+  const subcommands = [];
 
-function compileSlashCommandSubcommandGroup<
-  Builder extends SlashCommandSubcommandGroupBuilder,
->(
-  builder: Builder,
-  languageData: LanguageSubcommandGroupTexts<FinalLanguageBaseCommandTexts>,
-): Builder {
-  const newBuilder = compileBaseCommandData(builder, languageData);
-
-  if (newBuilder.options.length !== languageData.subcommands.length) {
-    return commandLogger.throw("Missing subcommand group data.");
+  if ("subcommands" in languageSubcommandGroup) {
+    subcommands.push(
+      ...compileSubcommands(
+        subcommandGroup,
+        languageSubcommandGroup.subcommands,
+      ),
+    );
   }
 
-  // @ts-ignore
-  newBuilder.options = compileSlashCommandSubcommands(
-    newBuilder.options,
-    languageData.subcommands,
+  return subcommands.length ?
+      { ...newBuilder, options: subcommands }
+    : newBuilder;
+}
+
+function compileSubcommands(
+  command: Command | SubcommandGroup,
+  languageSubcommands: StringMap<
+    LanguageCommandTexts<FinalLanguageBaseCommandTexts>
+  >,
+) {
+  const subcommands = command.getSubcommands();
+  const languageSubcommandsLength = getObjectSize(languageSubcommands);
+
+  if (subcommands.length !== languageSubcommandsLength) {
+    return commandLogger.throw(
+      "Missing or different subcommand language data.",
+    );
+  }
+
+  if (!subcommands.length) return [];
+
+  const finalSubcommands = [];
+
+  for (const subcommand of subcommands) {
+    const finalSubcommand = compileSubcommand(subcommand, languageSubcommands);
+    finalSubcommands.push(finalSubcommand);
+  }
+
+  return finalSubcommands;
+}
+
+function compileSubcommand(
+  subcommand: Subcommand,
+  languageSubcommands: StringMap<
+    LanguageCommandTexts<FinalLanguageBaseCommandTexts>
+  >,
+) {
+  const subcommandName = subcommand.getFileName();
+
+  if (!(subcommandName in languageSubcommands)) {
+    return commandLogger.throw(
+      `Missing language data for subcommand "${subcommandName}"`,
+    );
+  }
+
+  const languageSubcommand = languageSubcommands[subcommandName]!;
+  const newBuilder = compileBaseCommandData(
+    createSubcommand(),
+    languageSubcommand,
   );
+
+  if ("options" in languageSubcommand) {
+    return compileCommandOptions(
+      newBuilder,
+      subcommand,
+      languageSubcommand.options,
+    );
+  }
 
   return newBuilder;
 }
 
-function compileBaseCommandData<
-  Builder extends Partial<FinalLanguageBaseCommandTexts>,
->(builder: Builder, data: FinalLanguageBaseCommandTexts): Builder {
+function compileCommandOptions<Builder extends object>(
+  builder: Builder,
+  command: Command | Subcommand,
+  languageOptions: LanguageCommandTexts<FinalLanguageBaseCommandTexts>[],
+): Builder {
+  const options = command.getOptions();
+  const optionsLength = getObjectSize(options);
+  const languageOptionsLength = getObjectSize(languageOptions);
+
+  if (optionsLength !== languageOptionsLength) {
+    return commandLogger.throw(
+      "Missing or different option language/config data.",
+    );
+  }
+
+  const finalOptions = options.map((option, index) => {
+    const languageOption = languageOptions[index]!;
+
+    return convertToSnakeCase({
+      ...option,
+      ...languageOption,
+      type: OptionCommandTypeMap[option.getSettings().type],
+    });
+  });
+
+  return finalOptions.length ? { ...builder, options: finalOptions } : builder;
+}
+
+function compileBaseCommandData<Builder>(
+  builder: Builder,
+  data: FinalLanguageBaseCommandTexts,
+): Builder & FinalLanguageBaseCommandTexts {
   const { name, description, name_localizations, description_localizations } =
     data;
 
-  builder.name = name;
-  builder.description = description;
-  builder.name_localizations = name_localizations;
-  builder.description_localizations = description_localizations;
-
-  return builder;
+  return {
+    ...builder,
+    name,
+    description,
+    name_localizations,
+    description_localizations,
+  };
 }
 
 function validateCommandConfigurations(commands: Command[]): void {
@@ -279,7 +534,7 @@ function validateCommandConfigurations(commands: Command[]): void {
 
   if (nameConflicts.length) {
     const loggedCommands = nameConflicts
-      .map((command) => command.getCommandPath())
+      .map((command) => command.getFilePath())
       .join(", ");
 
     return commandLogger.throw(
@@ -287,14 +542,14 @@ function validateCommandConfigurations(commands: Command[]): void {
     );
   }
 
-  const guildConflicts = commands.filter(
-    ({ allowedGuilds, excludedGuilds }) =>
-      allowedGuilds.length && excludedGuilds.length,
-  );
+  const guildConflicts = commands.filter((command) => {
+    const { allowedGuilds, excludedGuilds } = command.getConfig();
+    return allowedGuilds.length && excludedGuilds.length;
+  });
 
   if (guildConflicts.length) {
     const loggedCommands = guildConflicts
-      .map((command) => command.getCommandPath())
+      .map((command) => command.getFilePath())
       .join(", ");
 
     return commandLogger.throw(

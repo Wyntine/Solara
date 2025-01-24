@@ -1,63 +1,132 @@
 import type {
+  ApplicationCommandOptionAllowedChannelTypes,
   ChatInputCommandInteraction,
   Client,
   ClientEvents,
+  InteractionContextType,
   InteractionResponse,
   Locale,
   LocalizationMap,
   Message,
-  SlashCommandBooleanOption,
-  SlashCommandBuilder,
-  SlashCommandChannelOption,
-  SlashCommandIntegerOption,
-  SlashCommandMentionableOption,
-  SlashCommandNumberOption,
-  SlashCommandOptionsOnlyBuilder,
-  SlashCommandRoleOption,
-  SlashCommandStringOption,
-  SlashCommandSubcommandBuilder,
-  SlashCommandSubcommandGroupBuilder,
-  SlashCommandSubcommandsOnlyBuilder,
-  SlashCommandUserOption,
 } from "discord.js";
-import type { FixedSizeArray, OptionTypes, StringMap } from "./utils.types.js";
-import type { Command } from "../classes/command.js";
-import type { CommandHelper } from "../utils/commands.js";
-import type { Language } from "../classes/language.js";
+import {
+  OptionTypes,
+  type DeepPartial,
+  type FixedSizeArray,
+  type ObjectKeyMap,
+  type OptionDataTypes,
+  type StringMap,
+} from "./utils.types.ts";
+import type { Command } from "../classes/command.ts";
+import type { CommandHelper } from "../utils/commands.ts";
+import type { Language } from "../classes/language.ts";
 import type { ObjectVerifier } from "@wyntine/verifier";
+import type { CommandConfig } from "../classes/commandConfig.ts";
+import type { CommandOptionConfig } from "../classes/commandOptions.ts";
+import type { Subcommand } from "../classes/subcommand.ts";
+import type { SubcommandGroup } from "../classes/subcommandGroup.ts";
+import type { Option } from "../classes/option.ts";
 
 //* Events
 
-export interface EventOptions<Category extends keyof ClientEvents> {
+export type Categories = keyof ClientEvents;
+
+export interface EventOptions<Category extends Categories> {
   category: Category;
   once?: boolean;
   enabled?: boolean;
   execute: EventExecuteFunction<Category>;
 }
 
-export type EventExecuteFunction<Category extends keyof ClientEvents> = (
+export type EventExecuteFunction<Category extends Categories> = (
   ...data: ClientEvents[Category]
 ) => unknown;
 
 //* Commands
 
-export interface CommandOptions<Type extends CommandType> {
-  type: Type;
-  slashCommandData?: UseSlashType<Type, SlashBuilder | SlashBuilders>;
-  messageCommandData?: UseMessageType<Type, MessageCommandOptions>;
-  allowedGuilds?: string[];
-  excludedGuilds?: string[];
-  developerOnly?: boolean;
+// TODO: Add attachment option in the future.
+
+export type IsExecutableStatus = IsExecutableSuccess | IsExecutableFail;
+
+export interface IsExecutableSuccess {
+  executable: true;
+}
+
+export interface IsExecutableFail {
+  executable: false;
+  errorKey?: IsExecutableErrorKeys;
+}
+
+export type IsExecutableErrorKeys = ObjectKeyMap<IsExecutableErrors>;
+
+export interface IsExecutableErrors {
+  perms: {
+    bot: string;
+    user: string;
+  };
+  cooldown: string;
+  options: {
+    maxLength: string;
+    minLength: string;
+    choices: string;
+    minValue: string;
+    maxValue: string;
+    required: string;
+    // TODO: Look from the docs and write channel types according to that
+    channelTypes: string;
+  };
+}
+
+export type PartialIsExecutableErrors = DeepPartial<IsExecutableErrors>;
+
+export type CommandOptionsDataWithoutType<Type extends OptionTypes> = Omit<
+  CommandOptionsData<Type>,
+  "type"
+>;
+export type CommandNames = [Default: string, ...Others: CommandName[]];
+export type CommandName = [Locale: Locale, Name: string];
+
+export interface ParsedInput {
+  options?: ParsedOption[] | undefined;
+  subcommand?: Subcommand | undefined;
+  subcommandGroup?: SubcommandGroup | undefined;
+}
+
+export interface ParsedOption<OptionType extends OptionTypes = OptionTypes> {
+  value: OptionDataTypes[OptionType] | undefined;
+  option: Option;
+}
+
+export interface CommandConfigOptions<Type extends CommandType> {
+  type?: Type;
   cooldown?: number;
   userPermissions?: bigint[];
   botPermissions?: bigint[];
+  allowedGuilds?: string[];
+  excludedGuilds?: string[];
+  developerOnly?: boolean;
   enabled?: boolean;
-  dmAccess?: boolean;
-  guildAccess?: boolean;
+  accessAreas?: InteractionContextType[];
+}
+
+export interface CommandOptions<Type extends CommandType> {
+  config?: CommandConfig<Type>;
+  options?: CommandOptionConfig;
+  execute?: CommandExecuteFunction<Type>;
+}
+
+export interface SubcommandOptions<Type extends CommandType> {
+  config?: CommandConfig<Type>;
+  options?: CommandOptionConfig;
   execute: CommandExecuteFunction<Type>;
 }
 
+export interface SubcommandGroupOptions<Type extends CommandType> {
+  config?: CommandConfig<Type>;
+}
+
 export type CommandExecuteFunction<Type extends CommandType> = (
+  this: void,
   executeData: CommandExecuteData<Type>,
 ) => unknown;
 
@@ -69,24 +138,6 @@ export interface CommandExecuteData<Type extends CommandType> {
   language: Language;
   client: Client;
   helpers: CommandHelper<Type>;
-}
-
-export type SlashBuilders =
-  | SlashCommandBuilder
-  | SlashCommandSubcommandBuilder
-  | SlashCommandOptionsOnlyBuilder
-  | SlashCommandSubcommandGroupBuilder
-  | SlashCommandSubcommandsOnlyBuilder;
-
-export type AvailableSlashCommandOptions =
-  | SlashCommandSubcommandGroupBuilder
-  | SlashCommandSubcommandBuilder
-  | OptionBuilders;
-
-export type SlashBuilder = (builder: SlashCommandBuilder) => SlashBuilders;
-
-export interface MessageCommandOptions {
-  aliases?: string[];
 }
 
 export enum CommandType {
@@ -105,19 +156,54 @@ export type CommandReplyType<Type extends CommandType> =
   : Type extends CommandType.Message ? Message
   : InteractionResponse | Message;
 
-export type UseMessageType<Type extends CommandType, Data> =
-  Type extends CommandType.Slash ? never : Data;
+export type CommandOptionsData<OptionType extends OptionTypes = OptionTypes> = {
+  [OptionTypes.String]: StringOption;
+  [OptionTypes.Boolean]: BooleanOption;
+  [OptionTypes.Channel]: ChannelOption;
+  [OptionTypes.Integer]: IntegerOption;
+  [OptionTypes.Mentionable]: MentionableOption;
+  [OptionTypes.Number]: NumberOption;
+  [OptionTypes.Role]: RoleOption;
+  [OptionTypes.User]: UserOption;
+  [OptionTypes.Member]: MemberOption;
+}[OptionType];
 
-export type UseSlashType<Type extends CommandType, Data> =
-  Type extends CommandType.Message ? never : Data;
+export interface StringOption extends BaseOption<OptionTypes.String> {
+  maxLength?: number;
+  minLength?: number;
+  choices?: string[];
+}
 
-export type OptionMap = Options[] | StringMap<Options[] | StringMap<Options[]>>;
+export type BooleanOption = BaseOption<OptionTypes.Boolean>;
 
-export type CommandRunners<Type extends CommandType> =
-  | CommandExecuteFunction<Type>
-  | StringMap<
-      CommandExecuteFunction<Type> | StringMap<CommandExecuteFunction<Type>>
-    >;
+export interface ChannelOption extends BaseOption<OptionTypes.Channel> {
+  channelTypes?: ApplicationCommandOptionAllowedChannelTypes[];
+}
+
+export interface IntegerOption extends BaseOption<OptionTypes.Integer> {
+  choices?: number[];
+  minValue?: number;
+  maxValue?: number;
+}
+
+export type MentionableOption = BaseOption<OptionTypes.Mentionable>;
+
+export interface NumberOption extends BaseOption<OptionTypes.Number> {
+  choices?: number[];
+  minValue?: number;
+  maxValue?: number;
+}
+
+export type RoleOption = BaseOption<OptionTypes.Role>;
+
+export type UserOption = BaseOption<OptionTypes.User>;
+
+export type MemberOption = BaseOption<OptionTypes.Member>;
+
+export interface BaseOption<OptionType extends OptionTypes> {
+  type: OptionType;
+  required?: boolean;
+}
 
 // {
 //   //* subcommand group
@@ -129,26 +215,11 @@ export type CommandRunners<Type extends CommandType> =
 //   test: ["..."]; //* subcommand with options
 // }
 
-export interface OptionData {
-  name: string;
-  type: OptionTypes;
-}
-
-export type Options = OptionData;
-
-// TODO: Add attachment option in the future.
-
-export type OptionBuilders =
-  | SlashCommandRoleOption
-  | SlashCommandUserOption
-  | SlashCommandNumberOption
-  | SlashCommandStringOption
-  | SlashCommandBooleanOption
-  | SlashCommandChannelOption
-  | SlashCommandIntegerOption
-  | SlashCommandMentionableOption;
-
 //* Languages
+
+export type GetErrorMessageReturn<
+  Key extends IsExecutableErrorKeys | undefined,
+> = Key extends undefined ? PartialIsExecutableErrors : string | undefined;
 
 //? Language texts
 
@@ -156,10 +227,12 @@ export interface LanguageOptions<Data> {
   languages: Locale[];
   texts: LanguageTexts;
   commandTexts: StringMap<LanguageCommandTexts<Data>>;
+  errorMessages?: PartialIsExecutableErrors;
 }
 
 export type LanguageOptionsOnlyTexts<Data> = {
   options?: LanguageOptionTextData<Data>[];
+  errorMessages?: PartialIsExecutableErrors;
 } & Data;
 
 export type LanguageOptionTextData<Data> = {
@@ -169,16 +242,18 @@ export type LanguageOptionTextData<Data> = {
 } & Data;
 
 export type LanguageSubcommandsOnlyTexts<Data> = {
-  subcommands?: LanguageSubcommandTexts<Data>[];
-  subcommandGroups?: LanguageSubcommandGroupTexts<Data>[];
+  subcommands?: StringMap<LanguageSubcommandTexts<Data>>;
+  subcommandGroups?: StringMap<LanguageSubcommandGroupTexts<Data>>;
+  errorMessages?: PartialIsExecutableErrors;
 } & Data;
 
 export type LanguageSubcommandTexts<Data> = {
   options?: LanguageOptionTextData<Data>[];
+  errorMessages?: PartialIsExecutableErrors;
 } & Data;
 
 export type LanguageSubcommandGroupTexts<Data> = {
-  subcommands: LanguageSubcommandTexts<Data>[];
+  subcommands: StringMap<LanguageSubcommandTexts<Data>>;
 } & Data;
 
 export type LanguageCommandTexts<Data> =
@@ -204,6 +279,19 @@ export interface FinalLanguageBaseCommandTexts
 // TODO: Complete langauge and command texts.
 export interface LanguageTexts {
   ping: Replacer<1>;
+  language: {
+    clear: string;
+    set: {
+      error: Replacer<1>;
+      languages: Replacer<1>;
+      success: Replacer<1>;
+    };
+    info: {
+      notDefined: string;
+      displayInfo: Replacer<1>;
+      userInfo: Replacer<1>;
+    };
+  };
 }
 
 // TODO: Add the options data.
@@ -224,10 +312,8 @@ export interface LanguageTexts {
 export type GetTextResult<Key extends keyof LanguageTexts | undefined> =
   Key extends string ? LanguageTexts[Key] : LanguageTexts;
 
-export type GetCommandTextResult<
-  Key extends keyof LanguageCommandTexts<LanguageBaseCommandTexts> | undefined,
-> =
-  Key extends string ? LanguageCommandTexts<LanguageBaseCommandTexts>[Key]
+export type GetCommandTextResult<Key extends string | undefined> =
+  Key extends string ? LanguageCommandTexts<LanguageBaseCommandTexts>
   : StringMap<LanguageCommandTexts<LanguageBaseCommandTexts>>;
 
 export type Replacer<StringSize extends number> = (
@@ -257,4 +343,5 @@ export interface BaseConfigBotData {
 
 export interface BaseConfigCommandsData {
   defaultPrefix: string;
+  registerOnStart: boolean;
 }

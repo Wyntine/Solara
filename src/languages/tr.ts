@@ -1,11 +1,24 @@
-import { createReplacer } from "../utils/strings.js";
-import { Language } from "../classes/language.js";
+import { createReplacer } from "../utils/strings.ts";
+import { Language } from "../classes/language.ts";
 import { Locale } from "discord.js";
 
 export default new Language({
   languages: [Locale.Turkish],
   texts: {
     ping: createReplacer("Botun gecikmesi **{0}** milisaniye."),
+    language: {
+      clear: "Dil silindi.",
+      set: {
+        error: createReplacer("Dil **{0}** bulunamadı."),
+        languages: createReplacer("Mevcut diller: {0}"),
+        success: createReplacer("Diliniz **{0}** olarak ayarlandı."),
+      },
+      info: {
+        notDefined: "Ayarlanmadı",
+        displayInfo: createReplacer("Görüntüleme dili: **{0}**"),
+        userInfo: createReplacer("Kullanıcı dili: **{0}**"),
+      },
+    },
   },
   commandTexts: {
     ping: {
@@ -15,12 +28,12 @@ export default new Language({
     owo: {
       name: "owo",
       description: "Owo hatırlatıcılarını yönetir",
-      subcommands: [
-        {
+      subcommands: {
+        list: {
           name: "liste",
           description: "Hatırlatıcıları listeler",
         },
-        {
+        enable: {
           name: "aç",
           description: "Seçilen veya tüm hatırlatıcıları aktifleştirir.",
           options: [
@@ -31,7 +44,7 @@ export default new Language({
             },
           ],
         },
-        {
+        disable: {
           name: "kapat",
           description: "Seçilen veya tüm hatırlatıcıları devre dışı bırakır.",
           options: [
@@ -40,37 +53,33 @@ export default new Language({
               description:
                 "Devre dışı bırakılacak hatırlatıcılar (boşluklarla ayrılır)",
             },
-            {
-              name: "deneme",
-              description: "deneme",
-            },
           ],
         },
-      ],
-    },
-    text: {
-      name: "yazı",
-      description: "Yazdığını bota yazdırır.",
-      options: [
-        {
-          name: "mesaj",
-          description: "Yazılacak mesaj",
-        },
-      ],
+      },
     },
     language: {
       name: "dil",
       description: "Botun dilini sizin için ayarlar.",
-      options: [
-        {
-          name: "yeni-dil",
-          description: "Kullanılacak dil",
+      subcommands: {
+        clear: {
+          name: "sil",
+          description: "Kullanıcı tanımlı görüntüleme dilini siler.",
         },
-      ],
-    },
-    tepki: {
-      name: "tepki",
-      description: "Tepki sistemini ayarlar.",
+        info: {
+          name: "bilgi",
+          description: "Kullanıcıya dil bilgisini gösterir..",
+        },
+        set: {
+          name: "ayarla",
+          description: "Kullanıcının görüntüleme dilini ayarlar.",
+          options: [
+            {
+              name: "yeni-dil",
+              description: "Kullanılacak dil",
+            },
+          ],
+        },
+      },
     },
   },
 });

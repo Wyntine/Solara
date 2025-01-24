@@ -1,156 +1,321 @@
-import { client } from "./client.js";
-import { commandLogger } from "../handlers/logger.js";
-import { config } from "../handlers/config.js";
-import { isArray } from "@wyntine/verifier";
+import { client } from "./client.ts";
+import { commandLogger } from "../handlers/logger.ts";
+import { config } from "../handlers/config.ts";
 import {
+  ApplicationCommandOptionType,
   ChatInputCommandInteraction,
   GuildMember,
+  InteractionContextType,
   Message,
   PermissionFlagsBits,
   Role,
-  SlashCommandBuilder,
-  SlashCommandSubcommandBuilder,
-  SlashCommandSubcommandGroupBuilder,
   User,
   type Channel,
   type InteractionReplyOptions,
   type MessageReplyOptions,
-  type ToAPIApplicationCommandOptions,
 } from "discord.js";
 import {
-  OptionTypeMap,
   OptionTypes,
-  type CommandExecutableCheckOptions,
   type CommandHelperOptions,
+  type CooldownItem,
   type HelperReplyOptions,
-  type Nullable,
   type OptionDataTypes,
-  type OptionGetters,
   type OptionParser,
-  type StringMap,
-} from "../types/utils.types.js";
+} from "../types/utils.types.ts";
 import type {
   CombinedInteraction,
-  CommandExecuteFunction,
+  CommandExecuteData,
   CommandInteractionType,
   CommandReplyType,
-  CommandRunners,
   CommandType,
-  OptionBuilders,
-  OptionMap,
-  Options,
-} from "../types/files.types.js";
-import type { Command } from "../classes/command.js";
-import type { Language } from "../classes/language.js";
-
-/**
- * Checks if a command is executable based on various conditions.
- *
- * @param options - The options for checking command executability.
- * @param options.command - The command to check.
- * @param options.interaction - The interaction that triggered the command.
- * @returns `true` if the command is executable, `false` otherwise.
- *
- * The function checks the following conditions:
- * - If the command is a slash command and the interaction is a message, or vice versa.
- * - If the interaction is in a guild and the command has guild access restrictions.
- * - If the command is restricted to certain guilds or excluded from certain guilds.
- * - If the command is developer-only and the user is not a developer.
- * - If the bot or user lacks the necessary permissions to execute the command.
- */
-export function isCommandExecutable(
-  options: CommandExecutableCheckOptions,
-): boolean {
-  const { command, interaction } = options;
-
-  const {
-    guildAccess,
-    dmAccess,
-    allowedGuilds,
-    excludedGuilds,
-    developerOnly,
-  } = command;
-
-  if (
-    (interaction instanceof Message && command.isSlashOnly()) ||
-    (interaction instanceof ChatInputCommandInteraction &&
-      command.isMessageOnly())
-  )
-    return false;
-
-  const reply = interaction.reply.bind(interaction);
-  const author =
-    interaction instanceof Message ? interaction.author : interaction.user;
-
-  const developers = config.get().bot.developers;
-  const cannotAccess =
-    (!dmAccess && !interaction.inGuild()) ||
-    (interaction.inGuild() &&
-      (!guildAccess ||
-        (allowedGuilds.length &&
-          !allowedGuilds.includes(interaction.guildId)) ||
-        (excludedGuilds.length &&
-          excludedGuilds.includes(interaction.guildId)))) ||
-    (developerOnly && !developers.includes(author.id));
-
-  if (cannotAccess) return false;
-
-  if (interaction.guild) {
-    const adminPerm = PermissionFlagsBits.Administrator;
-
-    const botUser = interaction.guild.members.me;
-
-    if (botUser && command.botPermissions.length) {
-      const botPermissions =
-        command.botPermissions.includes(adminPerm) ?
-          [adminPerm]
-        : command.botPermissions;
-
-      const missingPermissions = botPermissions.filter(
-        (permission) => !botUser.permissions.has(permission),
-      );
-
-      if (missingPermissions.length) {
-        // TODO: Add language support for permissions
-        void reply("Missing bot permissions.");
-        return false;
-      }
-    }
-
-    const user = interaction.member as GuildMember | null;
-
-    if (user && command.userPermissions.length) {
-      const userPermissions =
-        command.userPermissions.includes(adminPerm) ?
-          [adminPerm]
-        : command.userPermissions;
-
-      const missingPermissions = userPermissions.filter(
-        (permission) => !user.permissions.has(permission),
-      );
-
-      if (missingPermissions.length) {
-        // TODO: Add language support for permissions
-        void reply("Missing user permissions.");
-        return false;
-      }
-    }
-  }
-
-  return true;
-}
+  IsExecutableErrorKeys,
+  IsExecutableStatus,
+  ParsedInput,
+  PartialIsExecutableErrors,
+} from "../types/files.types.ts";
+import type { Command } from "../classes/command.ts";
+import type { Language } from "../classes/language.ts";
+import { isNumber, isString } from "@wyntine/verifier";
+import { getLanguage } from "../handlers/language.ts";
+import {
+  commandExecutionMap,
+  cooldowns,
+  userDatabase,
+} from "../handlers/database.ts";
+import type { Option } from "../classes/option.ts";
+import { getInnerObjectValue, mapPlaceholders } from "./objects.ts";
 
 export class CommandHelper<Type extends CommandType> {
+  public isCooldownSet = false;
   private interaction: CommandInteractionType<Type>;
   private command: Command<Type>;
   private args: string[];
   private language: Language;
+  private parsedInput: ParsedInput;
 
   constructor(options: CommandHelperOptions<Type>) {
     this.args = options.args ?? [];
     this.interaction = options.interaction;
     this.command = options.command;
-    this.language = options.language;
+    this.language = getLanguage(
+      userDatabase.get(this.getUser().id)?.language ??
+        (this.isSlashInteraction() ? this.interaction.locale : undefined),
+      true,
+    );
+    this.parsedInput = this.parseInput(true);
+  }
+
+  public getErrorMessage(errorKey: IsExecutableErrorKeys): string | undefined {
+    const subcommandPath = this.getSubcommandTextPath();
+    const subcommandGroupPath = this.getSubcommandGroupTextPath();
+
+    const langErrorMessages = this.language.getErrorMessage();
+    const texts = this.language.getCommandText();
+
+    const messageCandidates = [
+      ...[
+        subcommandPath ? `${subcommandPath}.errorMessages` : undefined,
+        subcommandGroupPath ?
+          `${subcommandGroupPath}.errorMessages`
+        : undefined,
+      ]
+        .filter(isString)
+        .map((item) => getInnerObjectValue(texts, item)),
+      this.command.getTexts().errorMessages,
+      langErrorMessages,
+    ].filter((item) => item !== undefined) as PartialIsExecutableErrors[];
+
+    for (const candidate of messageCandidates) {
+      const message = getInnerObjectValue(candidate, errorKey);
+
+      if (message) return this.replaceErrorMessage(message);
+    }
+
+    return;
+  }
+
+  public getRemainingCooldownAsMiliseconds(): number | undefined {
+    const cooldownData = this.getCommandCooldownData();
+    const expirationDate = cooldownData?.expirationDate;
+    return expirationDate ? expirationDate - Date.now() : undefined;
+  }
+
+  public getRemainingCooldownAsSeconds(): number | undefined {
+    const cooldownMiliseconds = this.getRemainingCooldownAsMiliseconds();
+    return cooldownMiliseconds ? cooldownMiliseconds / 1000 : undefined;
+  }
+
+  public replaceErrorMessage(message: string): string {
+    const remainingTime = this.getRemainingCooldownAsSeconds();
+    const remainingTimeText =
+      remainingTime ?
+        remainingTime.toFixed(remainingTime < 10 ? 2 : 0)
+      : undefined;
+    const replacedValues = mapPlaceholders(["cooldown"], [remainingTimeText]);
+
+    return message.replaceAll(
+      /\{\w+\}/g,
+      (substr: string) =>
+        (substr in replacedValues ?
+          replacedValues[substr as keyof typeof replacedValues]
+        : undefined) ?? substr,
+    );
+  }
+
+  public setCooldownChecked(isChecked: boolean): boolean {
+    const commandPath = this.getCommandPath();
+    const userId = this.getUser().id;
+
+    const cooldownData = cooldowns.get(userId) ?? [];
+    const cooldown = cooldownData.find((cd) => cd.commandPath === commandPath);
+
+    if (!cooldown) return true;
+    if (isChecked && cooldown.isChecked) return false;
+
+    const otherCooldowns = cooldownData.filter(
+      (cd) => cd.commandPath !== cooldown.commandPath,
+    );
+
+    cooldowns.set(userId, [...otherCooldowns, { ...cooldown, isChecked }]);
+    return true;
+  }
+
+  public getCommandCooldownData(): CooldownItem | undefined {
+    const commandPath = this.getCommandPath();
+    const userId = this.getUser().id;
+
+    const cooldownData = cooldowns.get(userId) ?? [];
+    const cooldown = cooldownData.find((cd) => cd.commandPath === commandPath);
+
+    return cooldown;
+  }
+
+  public startCooldown(seconds?: number): void {
+    if (this.isCooldownSet) {
+      return commandLogger.throw("Cooldown is already set!");
+    }
+
+    const commandCooldown = this.getCommandCooldownAsSeconds();
+
+    if (!isNumber(seconds) && !isNumber(commandCooldown)) {
+      commandLogger.warn(
+        `No command cooldown is set for "${this.getCommandPath()}"`,
+      );
+      return;
+    }
+
+    const cooldownMiliseconds = (seconds ?? commandCooldown)! * 1000;
+
+    if (cooldownMiliseconds <= 0) {
+      return commandLogger.throw("Cooldown must be a positive number.");
+    }
+
+    const expirationDate = Date.now() + cooldownMiliseconds;
+    const commandPath = this.getCommandPath();
+    const userId = this.getUser().id;
+    const userCooldowns = cooldowns.get(userId) ?? [];
+    const newUserCooldowns = [
+      ...userCooldowns.filter((path) => path.commandPath !== commandPath),
+      { commandPath, expirationDate },
+    ];
+    cooldowns.set(userId, newUserCooldowns);
+    this.isCooldownSet = true;
+  }
+
+  /**
+   * Checks if a command is executable based on various conditions.
+   *
+   * @returns `true` if the command is executable, `false` otherwise.
+   *
+   * The function checks the following conditions:
+   * - If the command is a slash command and the interaction is a message, or vice versa.
+   * - If the interaction is in a guild and the command has guild access restrictions.
+   * - If the command is restricted to certain guilds or excluded from certain guilds.
+   * - If the command is developer-only and the user is not a developer.
+   * - If the bot or user lacks the necessary permissions to execute the command.
+   */
+  public isExecutable(): IsExecutableStatus {
+    // TODO: Complete command verification.
+    // TODO: Add localizations for the error messages.
+    const command = this.command;
+    const interaction = this.interaction;
+
+    const {
+      accessAreas,
+      allowedGuilds,
+      excludedGuilds,
+      developerOnly,
+      botPermissions,
+      userPermissions,
+    } = command.getConfig();
+
+    if (
+      (interaction instanceof Message && command.isSlashOnly()) ||
+      (interaction instanceof ChatInputCommandInteraction &&
+        command.isMessageOnly())
+    )
+      return { executable: false };
+
+    const author =
+      interaction instanceof Message ? interaction.author : interaction.user;
+
+    const developers = config.get().bot.developers;
+    const cannotAccess =
+      (!accessAreas.includes(InteractionContextType.BotDM) &&
+        !interaction.inGuild()) ||
+      (interaction.inGuild() &&
+        (!accessAreas.includes(InteractionContextType.Guild) ||
+          (allowedGuilds.length &&
+            !allowedGuilds.includes(interaction.guildId)) ||
+          (excludedGuilds.length &&
+            excludedGuilds.includes(interaction.guildId)))) ||
+      (developerOnly && !developers.includes(author.id));
+
+    if (cannotAccess) return { executable: false };
+
+    const { expirationDate } = this.getCommandCooldownData() ?? {};
+
+    if (expirationDate && expirationDate >= Date.now()) {
+      return { executable: false, errorKey: "cooldown" };
+    }
+
+    if (interaction.guild) {
+      const adminPerm = PermissionFlagsBits.Administrator;
+      const botUser = interaction.guild.members.me;
+
+      if (botUser && botPermissions.length) {
+        const finalBotPermissions =
+          botPermissions.includes(adminPerm) ? [adminPerm] : botPermissions;
+
+        const missingPermissions = finalBotPermissions.filter(
+          (permission) => !botUser.permissions.has(permission),
+        );
+
+        if (missingPermissions.length) {
+          return { executable: false, errorKey: "perms.bot" };
+        }
+      }
+
+      const user = interaction.member as GuildMember | null;
+
+      if (user && userPermissions.length) {
+        const finalUserPermissions =
+          userPermissions.includes(adminPerm) ? [adminPerm] : userPermissions;
+
+        const missingPermissions = finalUserPermissions.filter(
+          (permission) => !user.permissions.has(permission),
+        );
+
+        if (missingPermissions.length) {
+          return { executable: false, errorKey: "perms.user" };
+        }
+      }
+    }
+
+    return { executable: true };
+  }
+
+  public static defaultExecuteFunction(
+    this: void,
+    data: CommandExecuteData<CommandType>,
+  ): void {
+    const { helpers, interaction } = data;
+    const { subcommand } = helpers.parseInput();
+
+    const executeData = helpers.prepareRunnerData();
+
+    if (subcommand?.isExecutable(interaction)) {
+      subcommand.execute(executeData);
+      return;
+    }
+
+    console.log("bulunamadı");
+  }
+
+  public async executeCommand(): Promise<boolean> {
+    const commandPath = this.getCommandPath();
+    const userId = this.getUser().id;
+    const userCommandExecutionMap = commandExecutionMap.get(userId) ?? [];
+    const isCommandExecuted = userCommandExecutionMap.includes(commandPath);
+
+    if (isCommandExecuted) return false;
+
+    commandExecutionMap.set(userId, [...userCommandExecutionMap, commandPath]);
+
+    await this.command.execute(this.prepareRunnerData());
+
+    const newUserCommandExecutionMap = commandExecutionMap.get(userId) ?? [];
+    const newData = newUserCommandExecutionMap.filter(
+      (path) => path !== commandPath,
+    );
+
+    if (newData.length === 0) {
+      commandExecutionMap.delete(userId);
+    } else {
+      commandExecutionMap.set(userId, newData);
+    }
+
+    return true;
   }
 
   /**
@@ -167,7 +332,7 @@ export class CommandHelper<Type extends CommandType> {
   public getUser(): User {
     return (
       this.isMessageInteraction() ? this.interaction.author
-      : this.isCommandInteraction() ? this.interaction.user
+      : this.isSlashInteraction() ? this.interaction.user
       : commandLogger.throw("Interaction type could not be determined.")
     );
   }
@@ -180,11 +345,10 @@ export class CommandHelper<Type extends CommandType> {
    * @returns The value of the option if it exists, otherwise undefined.
    * @throws Will throw an error if the option is required and not found.
    */
-  public getStringOption<Required extends boolean = false>(
-    optionName: string,
-    required?: Required,
-  ): Nullable<Required, string> {
-    return this.getOption(OptionTypes.String, optionName, required);
+  public getStringOption(
+    option: Option<OptionTypes.String>,
+  ): string | undefined {
+    return this.getOption(option);
   }
 
   /**
@@ -195,16 +359,10 @@ export class CommandHelper<Type extends CommandType> {
    * @returns The value of the option if it exists, otherwise undefined.
    * @throws Will throw an error if the option is required and not found.
    */
-  public getBooleanOption<Required extends boolean = false>(
-    optionName: string,
-    required?: Required,
-  ): Nullable<Required, boolean> {
-    return this.getOption(
-      OptionTypes.Boolean,
-      optionName,
-      required,
-      booleanParser,
-    );
+  public getBooleanOption(
+    option: Option<OptionTypes.Boolean>,
+  ): boolean | undefined {
+    return this.getOption(option, booleanParser);
   }
 
   /**
@@ -215,16 +373,10 @@ export class CommandHelper<Type extends CommandType> {
    * @returns The value of the option if it exists, otherwise undefined.
    * @throws Will throw an error if the option is required and not found.
    */
-  public getNumberOption<Required extends boolean = false>(
-    optionName: string,
-    required?: Required,
-  ): Nullable<Required, number> {
-    return this.getOption(
-      OptionTypes.Number,
-      optionName,
-      required,
-      numberParser,
-    );
+  public getNumberOption(
+    option: Option<OptionTypes.Number>,
+  ): number | undefined {
+    return this.getOption(option, numberParser);
   }
 
   /**
@@ -235,16 +387,10 @@ export class CommandHelper<Type extends CommandType> {
    * @returns The value of the option if it exists, otherwise undefined.
    * @throws Will throw an error if the option is required and not found.
    */
-  public getIntegerOption<Required extends boolean = false>(
-    optionName: string,
-    required?: Required,
-  ): Nullable<Required, number> {
-    return this.getOption(
-      OptionTypes.Integer,
-      optionName,
-      required,
-      integerParser,
-    );
+  public getIntegerOption(
+    option: Option<OptionTypes.Integer>,
+  ): number | undefined {
+    return this.getOption(option, integerParser);
   }
 
   /**
@@ -255,16 +401,10 @@ export class CommandHelper<Type extends CommandType> {
    * @returns The value of the option if it exists, otherwise undefined.
    * @throws Will throw an error if the option is required and not found.
    */
-  public getChannelOption<Required extends boolean = false>(
-    optionName: string,
-    required?: Required,
-  ): Nullable<Required, Channel> {
-    return this.getOption(
-      OptionTypes.Channel,
-      optionName,
-      required,
-      channelParser,
-    );
+  public getChannelOption(
+    option: Option<OptionTypes.Channel>,
+  ): Channel | undefined {
+    return this.getOption(option, channelParser);
   }
 
   /**
@@ -275,11 +415,8 @@ export class CommandHelper<Type extends CommandType> {
    * @returns The value of the option if it exists, otherwise undefined.
    * @throws Will throw an error if the option is required and not found.
    */
-  public getUserOption<Required extends boolean = false>(
-    optionName: string,
-    required?: Required,
-  ): Nullable<Required, User> {
-    return this.getOption(OptionTypes.User, optionName, required, userParser);
+  public getUserOption(option: Option<OptionTypes.User>): User | undefined {
+    return this.getOption(option, userParser);
   }
 
   /**
@@ -290,16 +427,8 @@ export class CommandHelper<Type extends CommandType> {
    * @returns The value of the option if it exists, otherwise undefined.
    * @throws Will throw an error if the option is required and not found.
    */
-  public getRoleOption<Required extends boolean = false>(
-    optionName: string,
-    required?: Required,
-  ): Nullable<Required, Role> {
-    return this.getOption(
-      OptionTypes.Role,
-      optionName,
-      required,
-      roleParser(this.interaction),
-    );
+  public getRoleOption(option: Option<OptionTypes.Role>): Role | undefined {
+    return this.getOption(option, roleParser(this.interaction));
   }
 
   /**
@@ -310,16 +439,10 @@ export class CommandHelper<Type extends CommandType> {
    * @returns The value of the option if it exists, otherwise undefined.
    * @throws Will throw an error if the option is required and not found.
    */
-  public getMemberOption<Required extends boolean = false>(
-    optionName: string,
-    required?: Required,
-  ): Nullable<Required, GuildMember> {
-    return this.getOption(
-      OptionTypes.Member,
-      optionName,
-      required,
-      memberParser(this.interaction),
-    );
+  public getMemberOption(
+    option: Option<OptionTypes.Member>,
+  ): GuildMember | undefined {
+    return this.getOption(option, memberParser(this.interaction));
   }
 
   /**
@@ -330,16 +453,10 @@ export class CommandHelper<Type extends CommandType> {
    * @returns The value of the option if it exists, otherwise undefined.
    * @throws Will throw an error if the option is required and not found.
    */
-  public getMentionableOption<Required extends boolean = false>(
-    optionName: string,
-    required?: Required,
-  ): Nullable<Required, User | Channel | Role | GuildMember> {
-    return this.getOption(
-      OptionTypes.Mentionable,
-      optionName,
-      required,
-      mentionableParser(this.interaction),
-    );
+  public getMentionableOption(
+    option: Option<OptionTypes.Mentionable>,
+  ): User | Channel | Role | GuildMember | undefined {
+    return this.getOption(option, mentionableParser(this.interaction));
   }
 
   /**
@@ -349,31 +466,11 @@ export class CommandHelper<Type extends CommandType> {
    * @throws Will throw an error if the option map is not set in the command.
    */
   public getSubcommandName(): string | undefined {
-    if (this.interaction instanceof ChatInputCommandInteraction) {
-      return this.interaction.options.getSubcommand();
+    if (this.isSlashInteraction()) {
+      return this.interaction.options.getSubcommand(false) ?? undefined;
     }
 
-    const optionMap = this.command.optionMap;
-
-    if (!optionMap) {
-      return commandLogger.throw(
-        `Option map is not set in command (${this.command.getCommandPath()})`,
-      );
-    }
-
-    if (Array.isArray(optionMap)) return undefined;
-
-    const [firstArg, secondArg] = this.args;
-
-    if (!firstArg || !(firstArg in optionMap)) return undefined;
-
-    const group = optionMap[firstArg]!;
-
-    if (Array.isArray(group)) return firstArg;
-
-    if (!secondArg || !(secondArg in group)) return undefined;
-
-    return secondArg;
+    return this.parseMessageInput().subcommand?.getFileName();
   }
 
   /**
@@ -383,46 +480,19 @@ export class CommandHelper<Type extends CommandType> {
    * @throws Will throw an error if the option map is not set in the command.
    */
   public getSubcommandGroupName(): string | undefined {
-    if (this.interaction instanceof ChatInputCommandInteraction) {
-      return this.interaction.options.getSubcommandGroup() ?? undefined;
-    }
-
-    const optionMap = this.command.optionMap;
-
-    if (!optionMap) {
-      return commandLogger.throw(
-        `Option map is not set in command (${this.command.getCommandPath()})`,
-      );
-    }
-
-    if (Array.isArray(optionMap)) return undefined;
-
-    const [firstArg] = this.args;
-
-    if (!firstArg || !(firstArg in optionMap)) return undefined;
-
-    const group = optionMap[firstArg]!;
-
-    if (Array.isArray(group)) return undefined;
-
-    return firstArg;
+    return this.isSlashInteraction() ?
+        (this.interaction.options.getSubcommandGroup(false) ?? undefined)
+      : this.parseMessageInput().subcommandGroup?.getFileName();
   }
 
-  /**
-   * Executes the provided command runners with the prepared runner data.
-   * If the command runners fail, the optional onFail callback is invoked.
-   *
-   * @param runners - The command runners to execute.
-   * @param onFail - Optional callback function to execute if the command runners fail.
-   */
-  public useCommandRunners(
-    runners: CommandRunners<Type>,
-    onFail?: CommandExecuteFunction<Type>,
-  ): void {
-    const runnerData = this.prepareRunnerData();
-    const status = this.getCommandRunnerStatus(runners, runnerData);
-
-    if (!status && onFail) onFail(runnerData);
+  public parseInput(override = false): ParsedInput {
+    return (
+      override ?
+        this.isMessageInteraction() ?
+          this.parseMessageInput()
+        : this.parseSlashInput()
+      : this.parsedInput
+    );
   }
 
   /**
@@ -438,8 +508,220 @@ export class CommandHelper<Type extends CommandType> {
       options as InteractionReplyOptions & MessageReplyOptions,
     )) as CommandReplyType<Type>;
   }
+  /**
+   * Checks if the current interaction is message command.
+   *
+   * @returns Returns true if the interaction is an instance of Message, otherwise false.
+   */
+  public isMessageInteraction(): this is CommandHelper<CommandType.Message> {
+    return this.interaction instanceof Message;
+  }
+
+  /**
+   * Determines if the current interaction is slash command interaction.
+   *
+   * @returns Returns true if the interaction is an instance of ChatInputCommandInteraction, otherwise false.
+   */
+  public isSlashInteraction(): this is CommandHelper<CommandType.Slash> {
+    return this.interaction instanceof ChatInputCommandInteraction;
+  }
+
+  public getCommandCooldownAsSeconds(): number | undefined {
+    const { subcommand } = this.parseInput();
+
+    const subcommandCooldown = subcommand?.getConfig().cooldown;
+    const commandCooldown = this.command.getConfig().cooldown;
+
+    return [subcommandCooldown, commandCooldown].find(
+      (cooldown) => isNumber(cooldown) && cooldown > 0,
+    );
+  }
 
   //* Private methods
+
+  private getSubcommandGroupTextPath(extraPath?: string): string | undefined {
+    const { subcommandGroup } = this.parseInput();
+
+    const subcommandGroupName = subcommandGroup?.getFileName();
+
+    const names = [
+      subcommandGroupName ?
+        `subcommandGroups.${subcommandGroupName}`
+      : undefined,
+      extraPath,
+    ].filter(isString);
+
+    return names.length ? names.join(".") : undefined;
+  }
+
+  private getSubcommandTextPath(extraPath?: string): string | undefined {
+    const { subcommand, subcommandGroup } = this.parseInput();
+
+    const subcommandGroupName = subcommandGroup?.getFileName();
+    const subcommandName = subcommand?.getFileName();
+
+    const names = [
+      subcommandGroupName ?
+        `subcommandGroups.${subcommandGroupName}`
+      : undefined,
+      subcommandName ? `subcommands.${subcommandName}` : undefined,
+      extraPath,
+    ].filter(isString);
+
+    return names.length ? names.join(".") : undefined;
+  }
+
+  private getCommandPath(): string {
+    const { subcommand, subcommandGroup } = this.parseInput();
+    const names = [
+      this.command.getFileName(),
+      subcommandGroup?.getFileName(),
+      subcommand?.getFileName(),
+    ];
+    return names.filter(isString).join(".");
+  }
+
+  private parseSlashInput(): ParsedInput {
+    if (!this.isSlashInteraction()) {
+      return commandLogger.throw(
+        "Slash input parsing cannot be used with message interactions.",
+      );
+    }
+
+    const subcommands = this.command.getSubcommands();
+    const subcommandGroups = this.command.getSubcommandGroups();
+
+    const subcommandName = this.getSubcommandName();
+    const subcommand =
+      subcommandName ?
+        (subcommands.find((subcommand) =>
+          subcommand.hasAnyName(subcommandName),
+        ) ??
+        subcommandGroups
+          .find((subcommandGroup) =>
+            subcommandGroup.getSubcommand(subcommandName),
+          )
+          ?.getSubcommand(subcommandName))
+      : undefined;
+
+    const subcommandGroupName = this.getSubcommandGroupName();
+    const subcommandGroup =
+      subcommandGroupName ?
+        subcommandGroups.find((subcommandGroup) =>
+          subcommandGroup.hasAnyName(subcommandGroupName),
+        )
+      : undefined;
+
+    if (!this.interaction.options.data.length)
+      return { subcommandGroup, subcommand };
+
+    const commandOptions =
+      subcommand ? subcommand.getOptions() : this.command.getOptions();
+
+    const isSubcommandGroup = !!subcommandGroupName;
+    const isSubcommand = !!subcommandName && !subcommandGroupName;
+
+    const optionType =
+      isSubcommandGroup ? ApplicationCommandOptionType.SubcommandGroup
+      : isSubcommand ? ApplicationCommandOptionType.Subcommand
+      : undefined;
+
+    let interactionOptions = this.interaction.options.data.filter((option) =>
+      optionType === undefined ? true : optionType === option.type,
+    );
+
+    if (isSubcommandGroup) {
+      const subcommand = interactionOptions
+        .find(
+          (option) =>
+            option.type === ApplicationCommandOptionType.SubcommandGroup &&
+            option.name === subcommandGroupName,
+        )
+        ?.options?.find(
+          (option) =>
+            option.type === ApplicationCommandOptionType.Subcommand &&
+            option.name === subcommandName,
+        );
+
+      interactionOptions = Array.from(subcommand?.options ?? []);
+    } else if (isSubcommand) {
+      const subcommand = interactionOptions.find(
+        (option) =>
+          option.type === ApplicationCommandOptionType.Subcommand &&
+          option.name === subcommandName,
+      );
+
+      interactionOptions = Array.from(subcommand?.options ?? []);
+    }
+
+    const options = commandOptions.map((option) => ({
+      option,
+      value: interactionOptions.find((_, index) => index === option.getIndex())
+        ?.value,
+    }));
+
+    return {
+      subcommandGroup,
+      subcommand,
+      options,
+    };
+  }
+
+  private parseMessageInput(): ParsedInput {
+    if (this.interaction instanceof ChatInputCommandInteraction) {
+      return commandLogger.throw(
+        "Message input parsing cannot be used with slash command interactions.",
+      );
+    }
+
+    const [firstArg, secondArg, ...others] = this.args;
+
+    if (!firstArg) return {};
+
+    const subcommandGroup = this.command
+      .getSubcommandGroups()
+      .find((subcommandGroup) => subcommandGroup.hasAnyName(firstArg));
+
+    if (subcommandGroup) {
+      if (!secondArg) return { subcommandGroup };
+
+      const subcommand = subcommandGroup
+        .getSubcommands()
+        .find((subcommand) => subcommand.hasAnyName(secondArg));
+
+      if (!subcommand) return { subcommandGroup };
+
+      const commandOptions = subcommand.getOptions();
+
+      const options = commandOptions.map((option, index) => ({
+        option,
+        value:
+          index === others.length - 1 ?
+            others.slice(index).join(" ")
+          : others.at(index),
+      }));
+
+      return { subcommandGroup, subcommand, options };
+    }
+
+    const subcommand = this.command
+      .getSubcommands()
+      .find((subcommand) => subcommand.hasAnyName(firstArg));
+
+    const commandOptions =
+      subcommand ? subcommand.getOptions() : this.command.getOptions();
+
+    const commandArgs = subcommand ? [secondArg, ...others] : this.args;
+    const options = commandOptions.map((option, index) => ({
+      option,
+      value:
+        index === commandOptions.length - 1 ?
+          commandArgs.slice(index).join(" ")
+        : commandArgs.at(index),
+    }));
+
+    return { subcommand, options };
+  }
 
   /**
    * Prepares and returns the data required for running a command.
@@ -462,51 +744,6 @@ export class CommandHelper<Type extends CommandType> {
   }
 
   /**
-   * Determines the status of a command runner and executes it if available.
-   *
-   * @param runners - An object containing command runners or a function.
-   * @param runnerData - Optional data prepared for the runner. Defaults to the result of `prepareRunnerData()`.
-   * @returns `true` if a command runner was found and executed, otherwise `false`.
-   */
-  private getCommandRunnerStatus(
-    runners: CommandRunners<Type>,
-    runnerData = this.prepareRunnerData(),
-  ): boolean {
-    if (typeof runners === "function") {
-      runners(runnerData);
-      return true;
-    }
-
-    const currentSubcommand = this.getSubcommandName();
-    const currentSubcommandGroup = this.getSubcommandGroupName();
-
-    if (!currentSubcommand) return false;
-
-    if (currentSubcommandGroup) {
-      const subcommandGroup = runners[currentSubcommandGroup];
-
-      if (!subcommandGroup || typeof subcommandGroup === "function")
-        return false;
-
-      const subcommandRunner = subcommandGroup[currentSubcommand];
-
-      if (subcommandRunner) {
-        subcommandRunner(runnerData);
-        return true;
-      }
-    } else {
-      const subcommandRunner = runners[currentSubcommand];
-
-      if (typeof subcommandRunner === "function") {
-        subcommandRunner(runnerData);
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /**
    * Retrieves an option from the interaction or command option map.
    *
    * @param optionType - The type of the option.
@@ -519,223 +756,48 @@ export class CommandHelper<Type extends CommandType> {
    * @throws Will throw an error if the required option is not found.
    * @throws Will throw an error if a parser is required but not provided.
    */
-  private getOption<
-    Type extends OptionTypes,
-    Required extends boolean = false,
-    Data = OptionDataTypes[Type],
-  >(
-    optionType: Type,
-    optionName: string,
-    required?: Required,
+  private getOption<Type extends OptionTypes, Data = OptionDataTypes[Type]>(
+    givenOption: Option<Type>,
     optionParser?: OptionParser<Data>,
-  ): Nullable<Required, Data> {
-    let option: string | Nullable<Required, Data> | undefined;
+  ): Data | undefined {
+    const options = this.parsedInput.options;
+    const optionType = givenOption.getSettings().type;
+    const optionIndex = givenOption.getIndex();
 
-    if (this.interaction instanceof Message) {
-      const optionMap = this.command.optionMap;
-
-      if (!optionMap) {
-        return commandLogger.throw(
-          `Option map is not set in command (${this.command.getCommandPath()})`,
-        );
-      }
-
-      if (!Array.isArray(optionMap)) {
-        const [firstArg, secondArg] = this.args;
-
-        if (!firstArg || !(firstArg in optionMap)) {
-          option = undefined;
-        } else {
-          const group = optionMap[firstArg]!;
-
-          if (isArray(group)) {
-            option = this.retrieveOption(group, optionName, 1);
-          } else {
-            if (!secondArg || !(secondArg in group)) {
-              option = undefined;
-            } else {
-              const inlineGroup = group[secondArg]!;
-
-              option = this.retrieveOption(inlineGroup, optionName, 2);
-            }
-          }
-        }
-      } else {
-        option = this.retrieveOption(optionMap, optionName);
-      }
-    } else {
-      const getter =
-        `get${optionType.at(0)?.toLocaleUpperCase() ?? ""}${optionType.slice(1)}` as OptionGetters;
-      const getterFunc = this.interaction.options[getter].bind(
-        this.interaction.options,
-      ) as (
-        name: string,
-        required?: boolean,
-      ) => Nullable<Required, Data> | undefined;
-      option = getterFunc(optionName, required);
-    }
-
-    const finalOption: Nullable<Required, Data> | undefined =
-      typeof option === "string" && optionType !== OptionTypes.String ?
-        optionParser ? optionParser(option)
-        : commandLogger.throw(
-            `Given option "${optionName}" of type "${optionType}" in command (${this.command.getCommandPath()}) requires a parser.`,
-          )
-      : (option as Nullable<Required, Data> | undefined);
-
-    if (required && finalOption === undefined) {
-      return commandLogger.throw(
-        `Command (${this.command.getCommandPath()}) requires "${optionType}" option "${optionName}"`,
-      );
-    }
-
-    return finalOption!;
-  }
-
-  /**
-   * Retrieves the value of a specified option from the command arguments.
-   *
-   * @param optionMap - An array of option objects that define the available options.
-   * @param optionName - The name of the option to retrieve.
-   * @param startIndex - The index to start searching for the option in the arguments. Defaults to 0.
-   * @returns The value of the specified option as a string, or `undefined` if the option is not found.
-   * @throws Will throw an error if the option mapping is not found in the command.
-   */
-  private retrieveOption(
-    optionMap: Options[],
-    optionName: string,
-    startIndex = 0,
-  ): string | undefined {
-    const newArgs = this.args.slice(startIndex);
-    const optionIndex = optionMap.findIndex(
-      (option) => option.name === optionName,
+    const option = options?.find(
+      ({ option }) =>
+        option.getIndex() === optionIndex &&
+        option.getSettings().type === optionType,
     );
 
-    if (optionIndex === -1) {
+    if (!option) {
       return commandLogger.throw(
-        `Command (${this.command.getCommandPath()}) do not have proper option mapping.`,
+        `Command (${this.command.getFilePath()}) do not have proper option mapping.`,
       );
     }
 
-    return optionIndex === optionMap.length - 1 ?
-        newArgs.slice(optionIndex).join(" ")
-      : newArgs.at(optionIndex);
-  }
+    const finalOption =
+      isString(option) && optionType !== OptionTypes.String ?
+        optionParser ? optionParser(option)
+        : commandLogger.throw(
+            `Given option index "${optionIndex.toString()}" of type "${optionType}" in command (${this.command.getFilePath()}) requires a parser.`,
+          )
+      : (option.value as Data | undefined);
 
-  /**
-   * Checks if the current interaction is message command.
-   *
-   * @returns Returns true if the interaction is an instance of Message, otherwise false.
-   */
-  private isMessageInteraction(): this is CommandHelper<CommandType.Message> {
-    return this.interaction instanceof Message;
-  }
-
-  /**
-   * Determines if the current interaction is slash command interaction.
-   *
-   * @returns Returns true if the interaction is an instance of ChatInputCommandInteraction, otherwise false.
-   */
-  private isCommandInteraction(): this is CommandHelper<CommandType.Slash> {
-    return this.interaction instanceof ChatInputCommandInteraction;
+    return finalOption;
   }
 }
 
-// TODO: Create option mapper
-/**
- * Creates a mapping of command options based on the provided SlashCommandBuilder data.
- *
- * @param slashCommandData - The SlashCommandBuilder instance containing command structure and options
- * @returns An OptionMap object containing mapped command options:
- *          - If the command has direct options, returns a direct mapping of those options
- *          - For subcommand groups, returns a nested structure mapping group name -> subcommand name -> options
- *          - For individual subcommands, returns a mapping of subcommand name -> options
- *
- * @example
- * const command = new SlashCommandBuilder()
- *   .setName('example')
- *   .addSubcommandGroup(group =>
- *     group.setName('group')
- *          .addSubcommand(sub =>
- *            sub.setName('sub')
- *               .addStringOption(opt => opt.setName('option'))))
- *
- * const optionMap = createOptionMap(command);
- * // Results in: { group: { sub: { option: [options] } } }
- */
-export function createOptionMap(
-  slashCommandData: SlashCommandBuilder,
-): OptionMap {
-  const { options, subcommandGroups, subcommands } = groupOptions(
-    slashCommandData.options,
-  );
-
-  if (options.length) {
-    return mapOptions(options);
-  }
-
-  const tempOptions: OptionMap = {};
-
-  for (const subcommandGroup of subcommandGroups) {
-    const subcommandsList = subcommandGroup.options;
-    const tempList: StringMap<Options[]> = {};
-
-    for (const subcommand of subcommandsList) {
-      tempList[subcommand.name] = mapOptions(listOptions(subcommand.options));
-    }
-
-    tempOptions[subcommandGroup.name] = tempList;
-  }
-
-  for (const subcommand of subcommands) {
-    tempOptions[subcommand.name] = mapOptions(listOptions(subcommand.options));
-  }
-
-  return tempOptions;
-}
-
-function mapOptions(options: OptionBuilders[]): Options[] {
-  return options.map((option) => ({
-    name: option.name,
-    type: OptionTypeMap[option.type],
-  }));
-}
-
-function listOptions(
-  options: ToAPIApplicationCommandOptions[],
-  excluded: unknown[] = [],
-): OptionBuilders[] {
-  return options.filter(
-    (option) => !excluded.find((opt) => opt === option),
-  ) as OptionBuilders[];
-}
-
-function groupOptions(slashOptions: ToAPIApplicationCommandOptions[]) {
-  const subcommandGroups = slashOptions.filter(
-    (option) => option instanceof SlashCommandSubcommandGroupBuilder,
-  );
-
-  const subcommands = slashOptions.filter(
-    (option) => option instanceof SlashCommandSubcommandBuilder,
-  );
-
-  const options = listOptions(slashOptions, [
-    ...subcommandGroups,
-    ...subcommands,
-  ]);
-
-  return {
-    subcommandGroups,
-    subcommands,
-    options,
-  };
-}
-
-function booleanParser(input: string | undefined): boolean | undefined {
+// TODO: Check API and change verification states
+function booleanParser(
+  input: string | boolean | undefined,
+): boolean | undefined {
   return (
-    input === "True" ? true
-    : input === "False" ? false
-    : undefined
+    isString(input) ?
+      ["True", "true"].includes(input) ? true
+      : ["False", "false"].includes(input) ? false
+      : undefined
+    : input
   );
 }
 

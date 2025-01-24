@@ -15,5 +15,7 @@ export const configVerifier = new ObjectVerifier()
   .addObject("commands", {
     required: true,
     verifierData: (object) =>
-      object.addString("defaultPrefix", { required: true }),
+      object
+        .addString("defaultPrefix", { required: true })
+        .addBoolean("registerOnStart"),
   });

@@ -1,10 +1,11 @@
-import { client } from "../utils/client.js";
-import { Event } from "../classes/event.js";
-import { eventLogger } from "./logger.js";
-import { readClassDirectory } from "../utils/readClassDirectory.js";
+import { client } from "../utils/client.ts";
+import { Event } from "../classes/event.ts";
+import { eventLogger } from "./logger.ts";
+import { readClassDirectory } from "../utils/readClassDirectory.ts";
 import type { ClientEvents } from "discord.js";
+import type { Categories } from "../types/files.types.ts";
 
-const eventMap = new Map<keyof ClientEvents, Event[]>();
+const eventMap = new Map<Categories, Event[]>();
 const eventsDir = "events";
 
 /**
@@ -22,7 +23,7 @@ export function getEvents(): Event[] {
  * @param category - The category of events to retrieve.
  * @returns An array of events corresponding to the specified category. If no events are found, an empty array is returned.
  */
-export function getEventCategory<Category extends keyof ClientEvents>(
+export function getEventCategory<Category extends Categories>(
   category: Category,
 ): Event<Category>[] {
   const events = eventMap.get(category) as unknown as
@@ -49,9 +50,9 @@ export async function readEvents(): Promise<Event[]> {
  *
  * @returns A promise that resolves when the events are registered.
  */
-export async function registerEvents(): Promise<void> {
+export async function registerEvents(): Promise<number> {
   const events = await readEvents();
-  const eventCategoryMap = events.reduce<Map<keyof ClientEvents, Event[]>>(
+  const eventCategoryMap = events.reduce<Map<Categories, Event[]>>(
     (total, event) => {
       const category = event.category;
       const oldEvents = total.get(category) ?? [];
@@ -65,6 +66,8 @@ export async function registerEvents(): Promise<void> {
   for (const [category, events] of eventCategoryMap) {
     client.on(category, createEventFunction(category, events));
   }
+
+  return events.length;
 }
 
 /**
@@ -74,7 +77,7 @@ export async function registerEvents(): Promise<void> {
  * @param events - An array of event objects to be filtered and executed.
  * @returns A function that takes event data as arguments and executes the enabled events.
  */
-export function createEventFunction<Category extends keyof ClientEvents>(
+export function createEventFunction<Category extends Categories>(
   category: Category,
   events: Event<Category>[],
 ) {

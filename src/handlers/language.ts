@@ -1,10 +1,14 @@
 import lodash from "lodash";
-import { config } from "./config.js";
+import { config } from "./config.ts";
 import { isArray, isObject } from "@wyntine/verifier";
-import { Language } from "../classes/language.js";
-import { languageLogger } from "./logger.js";
-import { readClassDirectory } from "../utils/readClassDirectory.js";
-import { removeMultipleKeys } from "../utils/objects.js";
+import { Language } from "../classes/language.ts";
+import { languageLogger } from "./logger.ts";
+import { readClassDirectory } from "../utils/readClassDirectory.ts";
+import {
+  getObjectSize,
+  mapObject,
+  removeMultipleKeys,
+} from "../utils/objects.ts";
 import {
   Locale,
   type APIApplicationCommandOptionChoice,
@@ -21,8 +25,8 @@ import type {
   LanguageSubcommandGroupTexts,
   LanguageSubcommandsOnlyTexts,
   LanguageSubcommandTexts,
-} from "../types/files.types.js";
-import type { StringMap } from "../types/utils.types.js";
+} from "../types/files.types.ts";
+import type { StringMap } from "../types/utils.types.ts";
 
 const languagesDir = "languages";
 
@@ -115,11 +119,13 @@ export async function readLangs(): Promise<Language[]> {
  *
  * @returns A promise that resolves when the languages have been registered.
  */
-export async function registerLangs(): Promise<void> {
+export async function registerLangs(): Promise<number> {
   const newLanguages = await readLangs();
   validateLangConf(newLanguages);
   languages = newLanguages;
   commandTextData = compileLangs();
+
+  return languages.length;
 }
 
 /**
@@ -175,21 +181,7 @@ function compileAllCommandTexts(
   data: StringMap<LanguageCommandTexts<LanguageBaseCommandTexts>>,
   langs: Locale[],
 ): StringMap<LanguageCommandTexts<CompiledLanguageBaseCommandTexts>> {
-  const finalData: StringMap<
-    LanguageCommandTexts<CompiledLanguageBaseCommandTexts>
-  > = {};
-
-  for (const item in data) {
-    const value = data[item];
-
-    if (!value) {
-      return languageLogger.throw("Unknown error: No command text found.");
-    }
-
-    finalData[item] = compileCommandTexts(value, langs);
-  }
-
-  return finalData;
+  return mapObject(data, (value) => compileCommandTexts(value!, langs));
 }
 
 /**
@@ -203,7 +195,7 @@ function compileCommandTexts(
   data: LanguageCommandTexts<LanguageBaseCommandTexts>,
   langs: Locale[],
 ): LanguageCommandTexts<CompiledLanguageBaseCommandTexts> {
-  if ("options" in data && data.options.length) {
+  if ("options" in data && getObjectSize(data.options)) {
     return compileOptionOnlyTexts(data, langs);
   }
 
@@ -246,13 +238,17 @@ function compileSubcommandsOnlyTexts(
 ): LanguageSubcommandsOnlyTexts<CompiledLanguageBaseCommandTexts> {
   let newData = compileBaseCommandTexts(data, langs);
 
-  const subcommands = data.subcommands?.map((subcommand) =>
-    compileSubcommandTexts(subcommand, langs),
-  );
+  const subcommands =
+    data.subcommands &&
+    mapObject(data.subcommands, (subcommand) =>
+      compileSubcommandTexts(subcommand!, langs),
+    );
 
-  const subcommandGroups = data.subcommandGroups?.map((subcommandGroup) =>
-    compileSubcommandGroupTexts(subcommandGroup, langs),
-  );
+  const subcommandGroups =
+    data.subcommandGroups &&
+    mapObject(data.subcommandGroups, (subcommandGroup) =>
+      compileSubcommandGroupTexts(subcommandGroup!, langs),
+    );
 
   if (subcommands)
     newData = {
@@ -324,14 +320,14 @@ function compileSubcommandTexts(
 ): LanguageSubcommandTexts<CompiledLanguageBaseCommandTexts> {
   const newSubcommand = compileBaseCommandTexts(data, langs);
 
-  const options =
-    newSubcommand.options?.map((option) => compileOptionTexts(option, langs)) ??
-    [];
+  const options = newSubcommand.options?.map((option) =>
+    compileOptionTexts(option, langs),
+  );
 
-  return {
-    ...newSubcommand,
-    options,
-  };
+  return (
+    options ?
+      { ...newSubcommand, options }
+    : newSubcommand) as LanguageSubcommandTexts<CompiledLanguageBaseCommandTexts>;
 }
 
 /**
@@ -346,10 +342,10 @@ function compileSubcommandGroupTexts(
   langs: Locale[],
 ): LanguageSubcommandGroupTexts<CompiledLanguageBaseCommandTexts> {
   const newSubcommandGroup = compileBaseCommandTexts(data, langs);
-  const newSubcommands = newSubcommandGroup.subcommands.map((subcommand) =>
-    compileSubcommandTexts(subcommand, langs),
+  const newSubcommands = mapObject(
+    newSubcommandGroup.subcommands,
+    (subcommand) => compileSubcommandTexts(subcommand!, langs),
   );
-
   return {
     ...newSubcommandGroup,
     subcommands: newSubcommands,
@@ -374,26 +370,21 @@ function compileDefaultLangChoices<Input>(input: Input): Input {
     return input.map(compileDefaultLangChoices) as Input;
   }
 
-  const output: Partial<Input> = {};
-
-  for (const item in input) {
-    const key = item as keyof typeof input;
-    const data = input[key];
-
+  return mapObject(input as Record<string, unknown>, (data, key) => {
     if (isObject(data)) {
-      output[key] = compileDefaultLangChoices(data);
-    } else if (isArray(data)) {
+      return compileDefaultLangChoices(data);
+    }
+
+    if (isArray(data)) {
       const result = (
-        item === "choices" ?
+        key === "choices" ?
           data.map((choice) => ({ name: choice as string }))
         : data.map(compileDefaultLangChoices)) as Input[keyof Input];
-      output[key] = result;
-    } else {
-      output[key] = data;
+      return result;
     }
-  }
 
-  return output as Input;
+    return data;
+  }) as Input;
 }
 
 /**

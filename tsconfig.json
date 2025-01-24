@@ -9,7 +9,8 @@
     "resolveJsonModule": true,
     "noEmit": true,
     "types": ["node"],
-    "lib": ["ESNext"]
+    "lib": ["ESNext"],
+    "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
 }

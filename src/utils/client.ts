@@ -14,3 +14,7 @@ export const client = new Client({
     parse: [],
   },
 });
+
+export function voidErrorHandler(): void {
+  return;
+}

@@ -1,35 +1,28 @@
-import type {
-  Channel,
-  GuildMember,
-  InteractionReplyOptions,
-  Locale,
-  MessageReplyOptions,
-  Role,
-  User,
+import {
+  ApplicationCommandOptionType,
+  type Channel,
+  type GuildMember,
+  type InteractionReplyOptions,
+  type Locale,
+  type MessageReplyOptions,
+  type Role,
+  type User,
 } from "discord.js";
-import type {
-  CombinedInteraction,
-  CommandInteractionType,
-  CommandType,
-} from "./files.types.js";
+import type { CommandInteractionType, CommandType } from "./files.types.ts";
 
-import type { Command } from "../classes/command.js";
-import type { JsonDatabaseController } from "../handlers/database/controllers/jsonController.js";
-import type { Language } from "../classes/language.js";
-import type { YamlDatabaseController } from "../handlers/database/controllers/yamlController.js";
+import type { Command } from "../classes/command.ts";
+import type { JsonDatabaseController } from "../handlers/database/controllers/jsonController.ts";
+import type { YamlDatabaseController } from "../handlers/database/controllers/yamlController.ts";
+
+export type RequiredStringMap<Map> =
+  Map extends StringMap<infer Type> ? Record<string, Type> : Map;
 
 export type FixedSizeArray<T, N extends number, R extends T[] = []> =
   R["length"] extends N ? R : FixedSizeArray<T, N, [T, ...R]>;
 
-export interface CommandExecutableCheckOptions {
-  command: Command;
-  interaction: CombinedInteraction;
-}
-
 export interface CommandHelperOptions<Type extends CommandType> {
   interaction: CommandInteractionType<Type>;
   command: Command<Type>;
-  language: Language;
   args?: string[];
 }
 
@@ -37,9 +30,6 @@ export type HelperReplyOptions<Type extends CommandType> =
   Type extends CommandType.Message ? MessageReplyOptions
   : Type extends CommandType.Slash ? InteractionReplyOptions
   : MessageReplyOptions | InteractionReplyOptions;
-
-export type Nullable<NonNull extends boolean, Data> =
-  NonNull extends true ? Data : Data | undefined;
 
 export enum OptionTypes {
   Role = "role",
@@ -53,25 +43,20 @@ export enum OptionTypes {
   Integer = "integer",
 }
 
-export const OptionTypeMap = {
-  3: OptionTypes.String,
-  4: OptionTypes.Integer,
-  5: OptionTypes.Boolean,
-  6: OptionTypes.User,
-  7: OptionTypes.Channel,
-  8: OptionTypes.Role,
-  9: OptionTypes.Mentionable,
-  10: OptionTypes.Number,
+export const OptionCommandTypeMap = {
+  [OptionTypes.Boolean]: ApplicationCommandOptionType.Boolean,
+  [OptionTypes.String]: ApplicationCommandOptionType.String,
+  [OptionTypes.Channel]: ApplicationCommandOptionType.Channel,
+  [OptionTypes.Integer]: ApplicationCommandOptionType.Integer,
+  [OptionTypes.Mentionable]: ApplicationCommandOptionType.Mentionable,
+  [OptionTypes.Number]: ApplicationCommandOptionType.Number,
+  [OptionTypes.Role]: ApplicationCommandOptionType.Role,
+  [OptionTypes.User]: ApplicationCommandOptionType.User,
+  [OptionTypes.Member]: ApplicationCommandOptionType.User,
 } as const;
-
-export type OptionGetters = AddGetter<OptionTypes>;
 
 export type CapitalizeFirstLetter<T extends string> =
   T extends `${infer F}${infer R}` ? `${Uppercase<F>}${R}` : T;
-
-export type AddGetter<T> =
-  T extends `${infer EnumValue}` ? `get${CapitalizeFirstLetter<EnumValue>}`
-  : never;
 
 export interface OptionDataTypes {
   [OptionTypes.Role]: Role;
@@ -104,10 +89,62 @@ export type DatabaseControllers<Data> =
   | JsonDatabaseController<Data>
   | YamlDatabaseController<Data>;
 
-export type UserDatabase = Partial<Record<string, UserData>>;
+export type UserDatabase = StringMap<UserData>;
+export type CooldownDatabase = StringMap<CooldownData>;
 
 export interface UserData {
   language?: Locale;
 }
 
+export type CooldownData = CooldownItem[];
+export interface CooldownItem {
+  commandPath: string;
+  expirationDate: number;
+  isChecked?: boolean;
+}
+
 export type StringMap<Data> = Partial<Record<string, Data>>;
+
+export type ObjectKeyMap<
+  Obj extends object,
+  RequiredObj = DeepRequired<Obj>,
+> = {
+  [Key in keyof RequiredObj]: Key extends string ?
+    RequiredObj[Key] extends object ?
+      `${Key}.${ObjectKeyMap<RequiredObj[Key]>}`
+    : Key
+  : never;
+}[keyof RequiredObj];
+
+export type GetItemFromKeyMap<Obj, Key extends string> =
+  Obj extends object ?
+    Key extends `${infer FirstKey}.${infer OtherKeys}` ?
+      FirstKey extends keyof Obj ?
+        Obj[FirstKey] extends object ?
+          GetItemFromKeyMap<Obj[FirstKey], OtherKeys>
+        : undefined
+      : undefined
+    : Key extends string ?
+      Key extends keyof Required<Obj> ?
+        Obj[Key]
+      : undefined
+    : never
+  : Obj;
+
+export type DeepPartial<Obj> =
+  Obj extends object ?
+    Obj extends unknown[] ?
+      Obj
+    : {
+        [Key in keyof Obj]?: DeepPartial<Obj[Key]>;
+      }
+  : Obj;
+
+export type DeepRequired<Obj> =
+  Obj extends object ?
+    Obj extends unknown[] ?
+      Obj
+    : {
+        [Key in keyof Obj]-?: DeepRequired<Obj[Key]>;
+      }
+  : Obj;

@@ -6,7 +6,8 @@ node_modules
 
 config.yml
 databases
+src/test.ts
 src/commands/tepki.ts
 src/handlers/database/tempDatabase.ts
 src/events/message.ts
-src/temp
+temp

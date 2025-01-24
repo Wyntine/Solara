@@ -1,11 +1,10 @@
 import type {
+  Categories,
   EventExecuteFunction,
   EventOptions,
-} from "../types/files.types.js";
+} from "../types/files.types.ts";
 
-import type { ClientEvents } from "discord.js";
-
-export class Event<Category extends keyof ClientEvents = keyof ClientEvents> {
+export class Event<Category extends Categories = Categories> {
   public category: Category;
   public once: boolean;
   public enabled: boolean;

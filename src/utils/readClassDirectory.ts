@@ -1,8 +1,8 @@
-import path from "path";
+import { join } from "path";
 import { isObject } from "@wyntine/verifier";
 import { readdir } from "fs/promises";
 import type { Dirent } from "fs";
-import type { Logger } from "./logger.js";
+import type { Logger } from "./logger.ts";
 
 /**
  * Reads a directory and imports all files that match a specified class type.
@@ -23,7 +23,7 @@ export async function readClassDirectory<
 ): Promise<InstanceType<Class>[]> {
   const instances: InstanceType<Class>[] = [];
 
-  const basePath = path.join("src", directory);
+  const basePath = join("src", directory);
   const files = (
     await readdir(basePath, {
       withFileTypes: true,
@@ -34,7 +34,7 @@ export async function readClassDirectory<
     .map(({ name, parentPath }) => ({ name, parentPath }));
 
   for (const file of files) {
-    const filePath = path.join(file.parentPath, file.name);
+    const filePath = join(file.parentPath, file.name);
     const loggedPath = filePath.slice(basePath.length + 1);
 
     const fileImportPath = `../../${filePath}`;
@@ -72,4 +72,29 @@ export function scriptFileFilter(this: void, file: Dirent): boolean {
   return (
     file.isFile() && file.name.endsWith(".ts") && !file.name.endsWith(".d.ts")
   );
+}
+
+export async function readClassFile<
+  Class extends new (...args: never[]) => InstanceType<Class>,
+>(
+  classType: Class,
+  path: string,
+  key = "default",
+): Promise<InstanceType<Class> | undefined> {
+  try {
+    const fileImportPath = join("..", path)
+      .replace(".ts", ".js")
+      .replaceAll("\\", "/");
+    const fileImport: unknown = await import(fileImportPath);
+
+    if (!isObject(fileImport) || !(key in fileImport)) return;
+
+    const fileData: unknown = fileImport[key as keyof typeof fileImport];
+
+    if (!(fileData instanceof classType)) return;
+
+    return fileData;
+  } catch {
+    return;
+  }
 }

@@ -5,3 +5,4 @@ bot:
     - "dev-id"
 commands:
   defaultPrefix: ">"
+  registerOnStart: false # Optional, set true to register slash commands on start

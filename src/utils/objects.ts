@@ -1,4 +1,10 @@
-import { isObject } from "@wyntine/verifier";
+import { isArray, isObject } from "@wyntine/verifier";
+import type {
+  GetItemFromKeyMap,
+  ObjectKeyMap,
+  RequiredStringMap,
+  StringMap,
+} from "../types/utils.types.ts";
 
 /**
  * Removes a specified key from an object and returns a new object without that key.
@@ -33,6 +39,26 @@ export function removeMultipleKeys<Data, Keys extends keyof Data>(
   );
 }
 
+export function convertToSnakeCase<ReturnType = StringMap<unknown>>(
+  obj: StringMap<unknown>,
+): ReturnType {
+  const tempObj: StringMap<unknown> = {};
+
+  for (const key in obj) {
+    const value = obj[key];
+    const newKey = key.split("").reduce((total, current) => {
+      const isLowerCase = current.toLowerCase() === current;
+      return isLowerCase ?
+          `${total}${current}`
+        : `${total}_${current.toLowerCase()}`;
+    }, "");
+
+    tempObj[newKey] = value;
+  }
+
+  return tempObj as ReturnType;
+}
+
 /**
  * Recursively prunes an object by removing properties with `undefined`, `null`,
  * or empty objects as values.
@@ -53,7 +79,7 @@ export function pruneObject<Data>(data: Data): Data {
     if (
       value === undefined ||
       value === null ||
-      (isObject(value) && Object.keys(value).length === 0)
+      (isObject(value) && getObjectSize(value) === 0)
     ) {
       continue;
     }
@@ -68,25 +94,92 @@ export function pruneObject<Data>(data: Data): Data {
  * Retrieves the value of a nested key within an object.
  *
  * @param data - The object from which to retrieve the value.
- * @param keys - An array of strings representing the path of keys to traverse.
+ * @param key - A string representing the path of keys to traverse. Splitted with dots ("a.b")
  * @returns The value found at the nested key path, or undefined if any key is not found or the path is invalid.
  */
-export function getInnerObjectKey<Output>(
-  data: unknown,
-  keys: string[],
-): Output | undefined {
-  let tempData = data;
+export function getInnerObjectValue<
+  Obj extends object,
+  Key extends ObjectKeyMap<Obj>,
+>(data: Obj, key: Key): GetItemFromKeyMap<Obj, Key> {
+  let tempData: unknown = data;
+  const keys = key.split(".");
 
-  for (const key of keys) {
-    if (tempData === null || typeof tempData !== "object" || !(key in tempData))
-      return;
+  return (() => {
+    for (const key of keys) {
+      if (!isObject(tempData) || !(key in tempData)) return;
 
-    const newData: unknown = tempData[key as keyof typeof tempData];
+      const newData: unknown = tempData[key as keyof typeof tempData];
 
-    if (newData === undefined || newData === null) return;
+      if (newData === undefined || newData === null) return;
 
-    tempData = newData;
+      tempData = newData;
+    }
+
+    return tempData;
+  })() as GetItemFromKeyMap<Obj, Key>;
+}
+
+export function mapObject<Obj extends Record<string, unknown>, ReturnType>(
+  obj: Obj,
+  func: <Key extends keyof Obj>(value: Obj[Key], key: Key) => ReturnType,
+): StringMap<ReturnType> {
+  const tempObj: StringMap<ReturnType> = {};
+
+  for (const key in obj) {
+    const value = obj[key];
+    tempObj[key] = func(value, key);
   }
 
-  return tempData as Output;
+  return tempObj;
+}
+
+export function findInObject<Obj extends Record<string, unknown>>(
+  obj: Obj,
+  func: <Key extends keyof Obj>(value: Obj[Key], key: Key) => boolean,
+): Parameters<typeof func>[0] | undefined {
+  for (const key in obj) {
+    const value = obj[key];
+    const result = func(value, key);
+
+    if (result) return value;
+  }
+
+  return;
+}
+
+export function getObjectSize(obj: object): number {
+  return isArray(obj) ? obj.length : Object.keys(obj).length;
+}
+
+export function isNonNullable(
+  input: unknown,
+): input is NonNullable<typeof input> {
+  return input !== null && input !== undefined;
+}
+
+export function mapObjectToArray<
+  Obj extends Record<string, unknown>,
+  PureReturnType = RequiredStringMap<Obj>[keyof RequiredStringMap<Obj>],
+  MappedReturnType = PureReturnType,
+>(
+  obj: Obj,
+  mapper?: (
+    data: [key: string, value: PureReturnType],
+    index: number,
+  ) => MappedReturnType,
+): MappedReturnType[] {
+  const mappedObject = Object.entries(obj) as [string, PureReturnType][];
+  return (
+    mapper ?
+      mappedObject.map(mapper)
+    : mappedObject.map(([, value]) => value)) as MappedReturnType[];
+}
+export function mapPlaceholders<Key extends string>(
+  items: Key[],
+  values?: (string | undefined)[],
+): Partial<Record<`{${Key}}`, string | undefined>> {
+  return items.reduce((total, current, index) => {
+    const value = values ? values[index] : undefined;
+    return { ...total, [`{${current}}`]: value };
+  }, {});
 }
