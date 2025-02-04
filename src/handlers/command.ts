@@ -35,6 +35,7 @@ import {
 } from "../utils/objects.js";
 import { getCommandText } from "./language.js";
 import { CommandHelper } from "../utils/commands.js";
+import { isObject } from "@wyntine/verifier";
 
 let commands: Command[] = [];
 const commandsDir = "commands";
@@ -508,7 +509,8 @@ function compileCommandOptions<Builder extends object>(
 
     const finalChoices =
       "choices" in commandOption ?
-        "choices" in languageOption ?
+        commandOption.choices.every(isObject) ? commandOption.choices
+        : "choices" in languageOption ?
           (languageOption.choices as { name: string }[]).map(
             ({ name }, index) => ({
               name,

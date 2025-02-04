@@ -1,5 +1,6 @@
 import type {
   ApplicationCommandOptionAllowedChannelTypes,
+  ApplicationCommandOptionChoiceData,
   ChatInputCommandInteraction,
   Client,
   ClientEvents,
@@ -171,7 +172,7 @@ export type CommandOptionsData<OptionType extends OptionTypes = OptionTypes> = {
 export interface StringOption extends BaseOption<OptionTypes.String> {
   maxLength?: number;
   minLength?: number;
-  choices?: string[];
+  choices?: string[] | ApplicationCommandOptionChoiceData<string>[];
 }
 
 export type BooleanOption = BaseOption<OptionTypes.Boolean>;
@@ -181,7 +182,7 @@ export interface ChannelOption extends BaseOption<OptionTypes.Channel> {
 }
 
 export interface IntegerOption extends BaseOption<OptionTypes.Integer> {
-  choices?: number[];
+  choices?: number[] | ApplicationCommandOptionChoiceData<number>[];
   minValue?: number;
   maxValue?: number;
 }
@@ -189,7 +190,7 @@ export interface IntegerOption extends BaseOption<OptionTypes.Integer> {
 export type MentionableOption = BaseOption<OptionTypes.Mentionable>;
 
 export interface NumberOption extends BaseOption<OptionTypes.Number> {
-  choices?: number[];
+  choices?: number[] | ApplicationCommandOptionChoiceData<number>[];
   minValue?: number;
   maxValue?: number;
 }
@@ -224,6 +225,8 @@ export type GetErrorMessageReturn<
 //? Language texts
 
 export interface LanguageOptions<Data> {
+  code: string;
+  name: string;
   languages: Locale[];
   texts: LanguageTexts;
   commandTexts: StringMap<LanguageCommandTexts<Data>>;
@@ -282,7 +285,8 @@ export interface LanguageTexts {
   language: {
     clear: string;
     set: {
-      error: Replacer<1>;
+      noInput: string;
+      error: string;
       languages: Replacer<1>;
       success: Replacer<1>;
     };
