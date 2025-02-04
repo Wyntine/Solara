@@ -511,12 +511,10 @@ function compileCommandOptions<Builder extends object>(
       "choices" in commandOption ?
         commandOption.choices.every(isObject) ? commandOption.choices
         : "choices" in languageOption ?
-          (languageOption.choices as { name: string }[]).map(
-            ({ name }, index) => ({
-              name,
-              value: commandOption.choices![index]!,
-            }),
-          )
+          (languageOption.choices as { name: string }[]).map((data, index) => ({
+            ...data,
+            value: commandOption.choices![index]!,
+          }))
         : commandOption.choices.map((choice) => ({
             name: choice,
             value: choice,
