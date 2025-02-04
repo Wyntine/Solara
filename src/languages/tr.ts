@@ -82,4 +82,9 @@ export default new Language({
       },
     },
   },
+  errorMessages: {
+    // TODO: Use placeholders
+    cooldown:
+      "Bu komutu tekrar kullanabilmek için **{cooldown} saniye** beklemen lazım.",
+  },
 });
