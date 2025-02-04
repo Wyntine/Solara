@@ -3,7 +3,6 @@ import {
   type Channel,
   type GuildMember,
   type InteractionReplyOptions,
-  type Locale,
   type MessageReplyOptions,
   type Role,
   type User,
@@ -93,7 +92,7 @@ export type UserDatabase = StringMap<UserData>;
 export type CooldownDatabase = StringMap<CooldownData>;
 
 export interface UserData {
-  language?: Locale;
+  language?: string;
 }
 
 export type CooldownData = CooldownItem[];

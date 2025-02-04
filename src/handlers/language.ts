@@ -88,6 +88,24 @@ export function getLanguage<UseDefault extends boolean = false>(
 }
 
 /**
+ * Retrieves the language configuration based on the provided language code.
+ *
+ * @param code - The code to search for in the available languages.
+ * @param useDefault - Optional flag to determine if the default language should be returned when the code is not found.
+ * @returns The language configuration corresponding to the provided code, or the default language if `useDefault` is true and the code is not found.
+ */
+export function getLanguageByCode<UseDefault extends boolean = false>(
+  code: string,
+  useDefault?: UseDefault,
+): GetLanguageReturn<UseDefault> {
+  const foundLang = languages.find((language) => language.code === code);
+
+  return (foundLang ??
+    (useDefault ? getDefaultLang() : (
+      undefined
+    ))) as GetLanguageReturn<UseDefault>;
+}
+/**
  * Reads and returns an array of Language objects from the specified directory.
  *
  * @returns A promise that resolves to an array of Language objects.

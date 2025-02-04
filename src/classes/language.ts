@@ -17,6 +17,8 @@ import { getInnerObjectValue } from "../utils/objects.js";
 
 export class Language {
   public languages: Locale[];
+  public code: string;
+  public name: string;
 
   private texts: LanguageTexts;
   private commandTexts: StringMap<
@@ -26,6 +28,8 @@ export class Language {
   private languagePath: string | undefined;
 
   constructor(options: LanguageOptions<LanguageBaseCommandTexts>) {
+    this.code = options.code;
+    this.name = options.name;
     this.languages = options.languages;
     this.texts = options.texts;
     this.commandTexts = options.commandTexts;

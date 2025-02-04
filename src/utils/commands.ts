@@ -36,7 +36,7 @@ import type {
 import type { Command } from "../classes/command.js";
 import type { Language } from "../classes/language.js";
 import { isNumber, isString } from "@wyntine/verifier";
-import { getLanguage } from "../handlers/language.js";
+import { getLanguage, getLanguageByCode } from "../handlers/language.js";
 import {
   commandExecutionMap,
   cooldowns,
@@ -57,11 +57,15 @@ export class CommandHelper<Type extends CommandType> {
     this.args = options.args ?? [];
     this.interaction = options.interaction;
     this.command = options.command;
-    this.language = getLanguage(
-      userDatabase.get(this.getUser().id)?.language ??
-        (this.isSlashInteraction() ? this.interaction.locale : undefined),
-      true,
-    );
+
+    const userLanguageData = userDatabase.get(this.getUser().id)?.language;
+    const commandLanguageData =
+      this.isSlashInteraction() ? this.interaction.locale : undefined;
+
+    this.language =
+      userLanguageData ?
+        getLanguageByCode(userLanguageData, true)
+      : getLanguage(commandLanguageData, true);
     this.parsedInput = this.parseInput(true);
   }
 

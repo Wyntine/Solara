@@ -3,13 +3,16 @@ import { Language } from "../classes/language.js";
 import { Locale } from "discord.js";
 
 export default new Language({
+  code: "tr",
+  name: "Türkçe",
   languages: [Locale.Turkish],
   texts: {
     ping: createReplacer("Botun gecikmesi **{0}** milisaniye."),
     language: {
       clear: "Dil silindi.",
       set: {
-        error: createReplacer("Dil **{0}** bulunamadı."),
+        noInput: "Lütfen ayarlamak istediğiniz yeni dilin kodunu girin.",
+        error: "Değiştirmek istediğiniz dil bulunamadı.",
         languages: createReplacer("Mevcut diller: {0}"),
         success: createReplacer("Diliniz **{0}** olarak ayarlandı."),
       },

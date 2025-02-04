@@ -3,13 +3,17 @@ import { Language } from "../classes/language.js";
 import { Locale } from "discord.js";
 
 export default new Language({
+  code: "en",
+  name: "English",
   languages: [Locale.EnglishGB, Locale.EnglishUS],
   texts: {
     ping: createReplacer("Bot's latency is **{0}** miliseconds."),
     language: {
       clear: "Language cleared.",
       set: {
-        error: createReplacer("Language **{0}** not found."),
+        noInput:
+          "Please enter the code of the new language that you want to set to.",
+        error: "Given language is not found.",
         languages: createReplacer("Available languages: {0}"),
         success: createReplacer("Your language is set to **{0}**"),
       },
