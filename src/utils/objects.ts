@@ -4,7 +4,7 @@ import type {
   ObjectKeyMap,
   RequiredStringMap,
   StringMap,
-} from "../types/utils.types.ts";
+} from "../types/utils.types.js";
 
 /**
  * Removes a specified key from an object and returns a new object without that key.

@@ -2,7 +2,7 @@ import type {
   Categories,
   EventExecuteFunction,
   EventOptions,
-} from "../types/files.types.ts";
+} from "../types/files.types.js";
 
 export class Event<Category extends Categories = Categories> {
   public category: Category;

@@ -1,6 +1,6 @@
-import { Config } from "../utils/config.ts";
-import { configVerifier } from "./verifiers.ts";
-import type { BaseConfigData } from "../types/files.types.ts";
+import { Config } from "../utils/config.js";
+import { configVerifier } from "./verifiers.js";
+import type { BaseConfigData } from "../types/files.types.js";
 
 export const config = new Config<BaseConfigData>({
   configPath: "./config.yml",

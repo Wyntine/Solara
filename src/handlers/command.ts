@@ -1,16 +1,18 @@
-import { Command } from "../classes/command.ts";
-import { commandLogger } from "./logger.ts";
+import { Command } from "../classes/command.js";
+import { commandLogger } from "./logger.js";
 import {
+  baseDir,
+  dev,
   readClassFile,
   scriptFileFilter,
-} from "../utils/readClassDirectory.ts";
+} from "../utils/readClassDirectory.js";
 
 import {
   CommandType,
   type CommandOptions,
   type FinalLanguageBaseCommandTexts,
   type LanguageCommandTexts,
-} from "../types/files.types.ts";
+} from "../types/files.types.js";
 import {
   ApplicationCommandOptionType,
   ApplicationCommandType,
@@ -19,19 +21,25 @@ import {
   Message,
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from "discord.js";
-import { config } from "./config.ts";
-import { OptionCommandTypeMap, type StringMap } from "../types/utils.types.ts";
+import { config } from "./config.js";
+import { OptionCommandTypeMap, type StringMap } from "../types/utils.types.js";
 import { join } from "path";
 import { readdir } from "fs/promises";
-import { CommandConfig } from "../classes/commandConfig.ts";
-import { Subcommand } from "../classes/subcommand.ts";
-import { SubcommandGroup } from "../classes/subcommandGroup.ts";
-import { convertToSnakeCase, getObjectSize } from "../utils/objects.ts";
-import { getCommandText } from "./language.ts";
-import { CommandHelper } from "../utils/commands.ts";
+import { CommandConfig } from "../classes/commandConfig.js";
+import { Subcommand } from "../classes/subcommand.js";
+import { SubcommandGroup } from "../classes/subcommandGroup.js";
+import {
+  convertToSnakeCase,
+  getObjectSize,
+  removeKey,
+} from "../utils/objects.js";
+import { getCommandText } from "./language.js";
+import { CommandHelper } from "../utils/commands.js";
 
 let commands: Command[] = [];
 const commandsDir = "commands";
+
+const configFileName = `_config.${dev ? "ts" : "js"}`;
 
 export function getCommands(): Command[] {
   return commands;
@@ -105,14 +113,14 @@ export function prepareSlashCommandHelper(
 
 export async function readCommands(): Promise<Command[]> {
   const commands: Command[] = [];
-  const basePath = join("src", commandsDir);
+  const basePath = join(baseDir, commandsDir);
   const files = (await readdir(basePath, { withFileTypes: true })).filter(
     (file) => file.isDirectory() || scriptFileFilter(file),
   );
 
   for (const file of files) {
     const filePath = join(basePath, file.name);
-    const loggedPath = filePath.slice("src".length + 1);
+    const loggedPath = filePath.slice(baseDir.length + 1);
 
     if (file.isDirectory()) {
       const commandText = getCommandText(file.name);
@@ -127,7 +135,7 @@ export async function readCommands(): Promise<Command[]> {
       //! Reading subcommands
       const config = await readClassFile(
         CommandConfig,
-        join(loggedPath, "_config.ts"),
+        join(loggedPath, configFileName),
       );
 
       if (!config) {
@@ -141,7 +149,7 @@ export async function readCommands(): Promise<Command[]> {
       ).filter(
         (file) =>
           (file.isDirectory() || scriptFileFilter(file)) &&
-          file.name !== "_config.ts",
+          file.name !== configFileName,
       );
 
       const subcommands: Subcommand[] = [];
@@ -170,7 +178,7 @@ export async function readCommands(): Promise<Command[]> {
 
           const subcommandGroupConfig = await readClassFile(
             CommandConfig,
-            join(subGroupImportPath, "_config.ts"),
+            join(subGroupImportPath, configFileName),
           );
 
           if (!subcommandGroupConfig) {
@@ -495,12 +503,29 @@ function compileCommandOptions<Builder extends object>(
   }
 
   const finalOptions = options.map((option, index) => {
-    const languageOption = languageOptions[index]!;
+    const languageOption = removeKey(languageOptions[index]!, "errorMessages");
+    const commandOption = option.getSettings();
+
+    const finalChoices =
+      "choices" in commandOption ?
+        "choices" in languageOption ?
+          (languageOption.choices as { name: string }[]).map(
+            ({ name }, index) => ({
+              name,
+              value: commandOption.choices![index]!,
+            }),
+          )
+        : commandOption.choices.map((choice) => ({
+            name: choice,
+            value: choice,
+          }))
+      : [];
 
     return convertToSnakeCase({
-      ...option.getSettings(),
+      ...commandOption,
       ...languageOption,
-      type: OptionCommandTypeMap[option.getSettings().type],
+      ...(finalChoices.length ? { choices: finalChoices } : {}),
+      type: OptionCommandTypeMap[commandOption.type],
     });
   });
 

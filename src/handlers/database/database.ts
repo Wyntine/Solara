@@ -1,13 +1,13 @@
-import { databaseLogger } from "../logger.ts";
+import { databaseLogger } from "../logger.js";
 import { existsSync, mkdirSync } from "fs";
-import { JsonDatabaseController } from "./controllers/jsonController.ts";
-import { YamlDatabaseController } from "./controllers/yamlController.ts";
+import { JsonDatabaseController } from "./controllers/jsonController.js";
+import { YamlDatabaseController } from "./controllers/yamlController.js";
 import {
   DatabaseType,
   type DatabaseControllers,
   type DatabaseOptions,
-} from "../../types/utils.types.ts";
-import { ControllerModel, type DataSetter } from "./controllerModel.ts";
+} from "../../types/utils.types.js";
+import { ControllerModel, type DataSetter } from "./controllerModel.js";
 
 export class Database<Data, Type extends DatabaseType>
   implements ControllerModel<Data>

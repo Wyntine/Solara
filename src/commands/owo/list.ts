@@ -1,4 +1,4 @@
-import { Subcommand } from "../../classes/subcommand.ts";
+import { Subcommand } from "../../classes/subcommand.js";
 
 export default new Subcommand({
   async execute({ helpers }) {

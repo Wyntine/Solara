@@ -1,4 +1,4 @@
-import { languageLogger } from "../handlers/logger.ts";
+import { languageLogger } from "../handlers/logger.js";
 import { Locale } from "discord.js";
 import type {
   GetCommandTextResult,
@@ -10,10 +10,10 @@ import type {
   LanguageOptions,
   LanguageTexts,
   PartialIsExecutableErrors,
-} from "../types/files.types.ts";
-import type { StringMap } from "../types/utils.types.ts";
+} from "../types/files.types.js";
+import type { StringMap } from "../types/utils.types.js";
 import { isString } from "@wyntine/verifier";
-import { getInnerObjectValue } from "../utils/objects.ts";
+import { getInnerObjectValue } from "../utils/objects.js";
 
 export class Language {
   public languages: Locale[];

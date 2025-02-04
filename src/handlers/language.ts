@@ -1,14 +1,14 @@
 import lodash from "lodash";
-import { config } from "./config.ts";
+import { config } from "./config.js";
 import { isArray, isObject } from "@wyntine/verifier";
-import { Language } from "../classes/language.ts";
-import { languageLogger } from "./logger.ts";
-import { readClassDirectory } from "../utils/readClassDirectory.ts";
+import { Language } from "../classes/language.js";
+import { languageLogger } from "./logger.js";
+import { readClassDirectory } from "../utils/readClassDirectory.js";
 import {
   getObjectSize,
   mapObject,
   removeMultipleKeys,
-} from "../utils/objects.ts";
+} from "../utils/objects.js";
 import {
   Locale,
   type APIApplicationCommandOptionChoice,
@@ -25,8 +25,8 @@ import type {
   LanguageSubcommandGroupTexts,
   LanguageSubcommandsOnlyTexts,
   LanguageSubcommandTexts,
-} from "../types/files.types.ts";
-import type { StringMap } from "../types/utils.types.ts";
+} from "../types/files.types.js";
+import type { StringMap } from "../types/utils.types.js";
 
 const languagesDir = "languages";
 

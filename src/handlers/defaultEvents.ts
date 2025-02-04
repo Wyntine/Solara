@@ -1,11 +1,11 @@
 import type { Interaction, Message } from "discord.js";
-import { errorEmbed } from "../utils/embeds.ts";
+import { errorEmbed } from "../utils/embeds.js";
 import {
   prepareMessageCommandHelper,
   prepareSlashCommandHelper,
-} from "./command.ts";
+} from "./command.js";
 import { isNumber } from "@wyntine/verifier";
-import { voidErrorHandler } from "../utils/client.ts";
+import { voidErrorHandler } from "../utils/client.js";
 
 export async function defaultCommandDetectionEvent(
   interaction: Interaction | Message,

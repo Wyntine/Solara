@@ -4,11 +4,11 @@ import {
   type CombinedInteraction,
   type CommandExecuteFunction,
   type SubcommandOptions,
-} from "../types/files.types.ts";
-import type { CommandOptionConfig } from "./commandOptions.ts";
-import { CommandConfig } from "./commandConfig.ts";
-import { LanguageCommand } from "./languageCommand.ts";
-import type { Option } from "./option.ts";
+} from "../types/files.types.js";
+import type { CommandOptionConfig } from "./commandOptions.js";
+import { CommandConfig } from "./commandConfig.js";
+import { LanguageCommand } from "./languageCommand.js";
+import type { Option } from "./option.js";
 
 export class Subcommand<
   Type extends CommandType = CommandType,

@@ -1,7 +1,7 @@
-import { Subcommand } from "../../classes/subcommand.ts";
-import { userDatabase } from "../../handlers/database.ts";
-import { infoEmbed } from "../../utils/embeds.ts";
-import { strJoin } from "../../utils/strings.ts";
+import { Subcommand } from "../../classes/subcommand.js";
+import { userDatabase } from "../../handlers/database.js";
+import { infoEmbed } from "../../utils/embeds.js";
+import { strJoin } from "../../utils/strings.js";
 
 export default new Subcommand({
   execute({ helpers, language }) {

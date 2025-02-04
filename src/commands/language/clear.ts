@@ -1,7 +1,7 @@
-import { Subcommand } from "../../classes/subcommand.ts";
-import { userDatabase } from "../../handlers/database.ts";
-import { successEmbed } from "../../utils/embeds.ts";
-import { removeKey } from "../../utils/objects.ts";
+import { Subcommand } from "../../classes/subcommand.js";
+import { userDatabase } from "../../handlers/database.js";
+import { successEmbed } from "../../utils/embeds.js";
+import { removeKey } from "../../utils/objects.js";
 
 export default new Subcommand({
   execute({ helpers, language }) {

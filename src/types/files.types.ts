@@ -16,16 +16,16 @@ import {
   type ObjectKeyMap,
   type OptionDataTypes,
   type StringMap,
-} from "./utils.types.ts";
-import type { Command } from "../classes/command.ts";
-import type { CommandHelper } from "../utils/commands.ts";
-import type { Language } from "../classes/language.ts";
+} from "./utils.types.js";
+import type { Command } from "../classes/command.js";
+import type { CommandHelper } from "../utils/commands.js";
+import type { Language } from "../classes/language.js";
 import type { ObjectVerifier } from "@wyntine/verifier";
-import type { CommandConfig } from "../classes/commandConfig.ts";
-import type { CommandOptionConfig } from "../classes/commandOptions.ts";
-import type { Subcommand } from "../classes/subcommand.ts";
-import type { SubcommandGroup } from "../classes/subcommandGroup.ts";
-import type { Option } from "../classes/option.ts";
+import type { CommandConfig } from "../classes/commandConfig.js";
+import type { CommandOptionConfig } from "../classes/commandOptions.js";
+import type { Subcommand } from "../classes/subcommand.js";
+import type { SubcommandGroup } from "../classes/subcommandGroup.js";
+import type { Option } from "../classes/option.js";
 
 //* Events
 
