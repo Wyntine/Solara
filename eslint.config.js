@@ -14,6 +14,10 @@ export default tseslint.config(
         tsconfigRootDir: import.meta.dirname,
       },
     },
+    rules: {
+      "@typescript-eslint/no-invalid-void-type": "off",
+      "@typescript-eslint/no-non-null-assertion": "off",
+    },
   },
   {
     ignores: [
@@ -24,9 +28,5 @@ export default tseslint.config(
       "vitest.config.ts",
       "global.d.ts",
     ],
-    rules: {
-      "@typescript-eslint/no-invalid-void-type": "off",
-      "@typescript-eslint/no-non-null-assertion": "off",
-    },
   },
 );
