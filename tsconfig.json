@@ -6,11 +6,11 @@
     "removeComments": true,
     "moduleResolution": "NodeNext",
     "module": "NodeNext",
-    "resolveJsonModule": true,
     "noEmit": true,
-    "types": ["node"],
+    "types": ["node", "vitest/globals"],
     "lib": ["ESNext"],
+    "resolveJsonModule": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts"]
 }

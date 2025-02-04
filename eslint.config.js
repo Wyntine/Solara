@@ -14,7 +14,16 @@ export default tseslint.config(
         tsconfigRootDir: import.meta.dirname,
       },
     },
-    ignores: ["dist", "node_modules", "eslint.config.js"],
+  },
+  {
+    ignores: [
+      "dist",
+      "node_modules",
+      "tsup.config.ts",
+      "eslint.config.js",
+      "vitest.config.ts",
+      "global.d.ts",
+    ],
     rules: {
       "@typescript-eslint/no-invalid-void-type": "off",
       "@typescript-eslint/no-non-null-assertion": "off",

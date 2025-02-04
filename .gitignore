@@ -1,6 +1,15 @@
 # Base files
 
 node_modules
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lock
+coverage
+
+# Build files
+
+dist
 
 # Extra files
 
@@ -11,3 +20,4 @@ src/commands/tepki.ts
 src/handlers/database/tempDatabase.ts
 src/events/message.ts
 temp
+todo.txt
