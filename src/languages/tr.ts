@@ -17,9 +17,11 @@ export default new Language({
         success: createReplacer("Diliniz **{0}** olarak ayarlandı."),
       },
       info: {
+        unknown: "Bilinmiyor",
         notDefined: "Ayarlanmadı",
         displayInfo: createReplacer("Görüntüleme dili: **{0}**"),
-        userInfo: createReplacer("Kullanıcı dili: **{0}**"),
+        accountInfo: createReplacer("Hesap dili: **{0}**"),
+        userInfo: createReplacer("Kullanıcı ayarlı dil: **{0}**"),
       },
     },
   },

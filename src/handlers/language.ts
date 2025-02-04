@@ -95,10 +95,11 @@ export function getLanguage<UseDefault extends boolean = false>(
  * @returns The language configuration corresponding to the provided code, or the default language if `useDefault` is true and the code is not found.
  */
 export function getLanguageByCode<UseDefault extends boolean = false>(
-  code: string,
+  code: string | undefined,
   useDefault?: UseDefault,
 ): GetLanguageReturn<UseDefault> {
-  const foundLang = languages.find((language) => language.code === code);
+  const foundLang =
+    code ? languages.find((language) => language.code === code) : undefined;
 
   return (foundLang ??
     (useDefault ? getDefaultLang() : (

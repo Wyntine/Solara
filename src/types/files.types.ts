@@ -291,7 +291,9 @@ export interface LanguageTexts {
       success: Replacer<1>;
     };
     info: {
+      unknown: string;
       notDefined: string;
+      accountInfo: Replacer<1>;
       displayInfo: Replacer<1>;
       userInfo: Replacer<1>;
     };

@@ -18,9 +18,11 @@ export default new Language({
         success: createReplacer("Your language is set to **{0}**"),
       },
       info: {
+        unknown: "Unknown",
         notDefined: "Not defined",
         displayInfo: createReplacer("Display language: **{0}**"),
-        userInfo: createReplacer("User language: **{0}**"),
+        accountInfo: createReplacer("Account language: **{0}**"),
+        userInfo: createReplacer("User defined language: **{0}**"),
       },
     },
   },

@@ -45,6 +45,18 @@ import {
 import type { Option } from "../classes/option.js";
 import { getInnerObjectValue, mapPlaceholders } from "./objects.js";
 
+export function isSlashInteraction(
+  interaction: CombinedInteraction,
+): interaction is ChatInputCommandInteraction {
+  return interaction instanceof ChatInputCommandInteraction;
+}
+
+export function isMessageInteraction(
+  interaction: CombinedInteraction,
+): interaction is Message {
+  return interaction instanceof Message;
+}
+
 export class CommandHelper<Type extends CommandType> {
   public isCooldownSet = false;
   private interaction: CommandInteractionType<Type>;
@@ -516,7 +528,7 @@ export class CommandHelper<Type extends CommandType> {
    * @returns Returns true if the interaction is an instance of Message, otherwise false.
    */
   public isMessageInteraction(): this is CommandHelper<CommandType.Message> {
-    return this.interaction instanceof Message;
+    return isMessageInteraction(this.interaction);
   }
 
   /**
@@ -525,7 +537,7 @@ export class CommandHelper<Type extends CommandType> {
    * @returns Returns true if the interaction is an instance of ChatInputCommandInteraction, otherwise false.
    */
   public isSlashInteraction(): this is CommandHelper<CommandType.Slash> {
-    return this.interaction instanceof ChatInputCommandInteraction;
+    return isSlashInteraction(this.interaction);
   }
 
   public getCommandCooldownAsSeconds(): number | undefined {
