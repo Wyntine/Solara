@@ -498,7 +498,7 @@ function compileCommandOptions<Builder extends object>(
     const languageOption = languageOptions[index]!;
 
     return convertToSnakeCase({
-      ...option,
+      ...option.getSettings(),
       ...languageOption,
       type: OptionCommandTypeMap[option.getSettings().type],
     });

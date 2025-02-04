@@ -818,7 +818,7 @@ function integerParser(input: string | undefined): number | undefined {
 function channelParser(input: string | undefined): Channel | undefined {
   if (input === undefined) return;
 
-  const match = input.match(/<#!?(\d+)>$/)?.[1];
+  const match = /<#!?(\d+)>$/.exec(input)?.[1];
 
   if (!match) return;
 
@@ -829,7 +829,7 @@ function roleParser(interaction: CombinedInteraction) {
   return (input: string | undefined): Role | undefined => {
     if (input === undefined) return;
 
-    const match = input.match(/<@&?(\d+)>$/)?.[1];
+    const match = /<@&?(\d+)>$/.exec(input)?.[1];
 
     if (!match) return;
 
@@ -840,7 +840,7 @@ function roleParser(interaction: CombinedInteraction) {
 function userParser(input: string | undefined): User | undefined {
   if (input === undefined) return;
 
-  const match = input.match(/<@!?(\d+)>$/)?.[1];
+  const match = /<@!?(\d+)>$/.exec(input)?.[1];
 
   if (!match) return;
 
@@ -851,7 +851,7 @@ function memberParser(interaction: CombinedInteraction) {
   return (input: string | undefined): GuildMember | undefined => {
     if (input === undefined) return;
 
-    const match = input.match(/<@!?(\d+)>$/)?.[1];
+    const match = /<@!?(\d+)>$/.exec(input)?.[1];
 
     if (!match) return;
 
@@ -863,7 +863,7 @@ function mentionableParser(interaction: CombinedInteraction) {
   return (input: string | undefined): GuildMember | User | Role | undefined => {
     if (input === undefined) return;
 
-    const match = input.match(/<@!?(\d+)>$/)?.[1];
+    const match = /<@!?(\d+)>$/.exec(input)?.[1];
 
     if (!match) return;
 

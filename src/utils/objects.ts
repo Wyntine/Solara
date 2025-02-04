@@ -39,9 +39,7 @@ export function removeMultipleKeys<Data, Keys extends keyof Data>(
   );
 }
 
-export function convertToSnakeCase<ReturnType = StringMap<unknown>>(
-  obj: StringMap<unknown>,
-): ReturnType {
+export function convertToSnakeCase(obj: StringMap<unknown>) {
   const tempObj: StringMap<unknown> = {};
 
   for (const key in obj) {
@@ -56,7 +54,7 @@ export function convertToSnakeCase<ReturnType = StringMap<unknown>>(
     tempObj[newKey] = value;
   }
 
-  return tempObj as ReturnType;
+  return tempObj;
 }
 
 /**
