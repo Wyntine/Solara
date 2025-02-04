@@ -4,11 +4,12 @@ import type {
   CommandNames,
   FinalLanguageBaseCommandTexts,
   LanguageCommandTexts,
-} from "../types/files.types.ts";
+} from "../types/files.types.js";
 import { isString } from "@wyntine/verifier";
-import { commandLogger } from "../handlers/logger.ts";
+import { commandLogger } from "../handlers/logger.js";
 import { basename } from "path";
-import { getCommandText } from "../handlers/language.ts";
+import { getCommandText } from "../handlers/language.js";
+import { dev } from "../utils/readClassDirectory.js";
 
 export class LanguageCommand {
   protected commandPath?: string;
@@ -124,6 +125,6 @@ export class LanguageCommand {
    * @throws If the command file name has not been set.
    */
   public getFileName(): string {
-    return basename(this.getFilePath(), ".ts");
+    return basename(this.getFilePath(), dev ? ".ts" : ".js");
   }
 }

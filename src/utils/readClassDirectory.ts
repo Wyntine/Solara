@@ -2,7 +2,11 @@ import { join } from "path";
 import { isObject } from "@wyntine/verifier";
 import { readdir } from "fs/promises";
 import type { Dirent } from "fs";
-import type { Logger } from "./logger.ts";
+import type { Logger } from "./logger.js";
+
+export const dev = process.env["NODE_ENV"] !== "production";
+
+export const baseDir = dev ? "src" : "dist";
 
 /**
  * Reads a directory and imports all files that match a specified class type.
@@ -22,8 +26,8 @@ export async function readClassDirectory<
   verification?: (input: InstanceType<Class>, loggedPath: string) => boolean,
 ): Promise<InstanceType<Class>[]> {
   const instances: InstanceType<Class>[] = [];
+  const basePath = join(baseDir, directory);
 
-  const basePath = join("src", directory);
   const files = (
     await readdir(basePath, {
       withFileTypes: true,
@@ -37,7 +41,9 @@ export async function readClassDirectory<
     const filePath = join(file.parentPath, file.name);
     const loggedPath = filePath.slice(basePath.length + 1);
 
-    const fileImportPath = `../../${filePath}`;
+    const fileImportPath = join("..", "..", filePath)
+      .replace(".ts", ".js")
+      .replaceAll("\\", "/");
     const fileImport: unknown = await import(fileImportPath);
 
     if (!isObject(fileImport) || !("default" in fileImport)) {
@@ -70,7 +76,10 @@ export async function readClassDirectory<
  */
 export function scriptFileFilter(this: void, file: Dirent): boolean {
   return (
-    file.isFile() && file.name.endsWith(".ts") && !file.name.endsWith(".d.ts")
+    file.isFile() &&
+    (dev ?
+      file.name.endsWith(".ts") && !file.name.endsWith(".d.ts")
+    : file.name.endsWith(".js"))
   );
 }
 
