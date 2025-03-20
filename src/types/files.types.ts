@@ -339,6 +339,7 @@ export interface ConfigOptions {
 export interface BaseConfigData {
   bot: BaseConfigBotData;
   commands: BaseConfigCommandsData;
+  logs: BaseConfigLogsData;
 }
 
 export interface BaseConfigBotData {
@@ -350,4 +351,11 @@ export interface BaseConfigBotData {
 export interface BaseConfigCommandsData {
   defaultPrefix: string;
   registerOnStart: boolean;
+}
+
+export interface BaseConfigLogsData {
+  warn: StringMap<boolean>;
+  error: StringMap<boolean>;
+  debug: StringMap<boolean>;
+  info: StringMap<boolean>;
 }

@@ -71,12 +71,12 @@ export class CommandHelper<Type extends CommandType> {
     this.command = options.command;
 
     const userLanguageData = userDatabase.get(this.getUser().id)?.language;
-    const commandLanguageData =
-      this.isSlashInteraction() ? this.interaction.locale : undefined;
+    const commandLanguageData = this.isSlashInteraction()
+      ? this.interaction.locale
+      : undefined;
 
-    this.language =
-      userLanguageData ?
-        getLanguageByCode(userLanguageData, true)
+    this.language = userLanguageData
+      ? getLanguageByCode(userLanguageData, true)
       : getLanguage(commandLanguageData, true);
     this.parsedInput = this.parseInput(true);
   }
@@ -91,9 +91,9 @@ export class CommandHelper<Type extends CommandType> {
     const messageCandidates = [
       ...[
         subcommandPath ? `${subcommandPath}.errorMessages` : undefined,
-        subcommandGroupPath ?
-          `${subcommandGroupPath}.errorMessages`
-        : undefined,
+        subcommandGroupPath
+          ? `${subcommandGroupPath}.errorMessages`
+          : undefined,
       ]
         .filter(isString)
         .map((item) => getInnerObjectValue(texts, item)),
@@ -123,18 +123,17 @@ export class CommandHelper<Type extends CommandType> {
 
   public replaceErrorMessage(message: string): string {
     const remainingTime = this.getRemainingCooldownAsSeconds();
-    const remainingTimeText =
-      remainingTime ?
-        remainingTime.toFixed(remainingTime < 10 ? 2 : 0)
+    const remainingTimeText = remainingTime
+      ? remainingTime.toFixed(remainingTime < 10 ? 2 : 0)
       : undefined;
     const replacedValues = mapPlaceholders(["cooldown"], [remainingTimeText]);
 
     return message.replaceAll(
       /\{\w+\}/g,
       (substr: string) =>
-        (substr in replacedValues ?
-          replacedValues[substr as keyof typeof replacedValues]
-        : undefined) ?? substr,
+        (substr in replacedValues
+          ? replacedValues[substr as keyof typeof replacedValues]
+          : undefined) ?? substr,
     );
   }
 
@@ -175,6 +174,7 @@ export class CommandHelper<Type extends CommandType> {
 
     if (!isNumber(seconds) && !isNumber(commandCooldown)) {
       commandLogger.warn(
+        { key: "noCooldown" },
         `No command cooldown is set for "${this.getCommandPath()}"`,
       );
       return;
@@ -260,8 +260,9 @@ export class CommandHelper<Type extends CommandType> {
       const botUser = interaction.guild.members.me;
 
       if (botUser && botPermissions.length) {
-        const finalBotPermissions =
-          botPermissions.includes(adminPerm) ? [adminPerm] : botPermissions;
+        const finalBotPermissions = botPermissions.includes(adminPerm)
+          ? [adminPerm]
+          : botPermissions;
 
         const missingPermissions = finalBotPermissions.filter(
           (permission) => !botUser.permissions.has(permission),
@@ -275,8 +276,9 @@ export class CommandHelper<Type extends CommandType> {
       const user = interaction.member as GuildMember | null;
 
       if (user && userPermissions.length) {
-        const finalUserPermissions =
-          userPermissions.includes(adminPerm) ? [adminPerm] : userPermissions;
+        const finalUserPermissions = userPermissions.includes(adminPerm)
+          ? [adminPerm]
+          : userPermissions;
 
         const missingPermissions = finalUserPermissions.filter(
           (permission) => !user.permissions.has(permission),
@@ -344,11 +346,11 @@ export class CommandHelper<Type extends CommandType> {
    * @throws Will throw an error if the interaction type cannot be determined.
    */
   public getUser(): User {
-    return (
-      this.isMessageInteraction() ? this.interaction.author
-      : this.isSlashInteraction() ? this.interaction.user
-      : commandLogger.throw("Interaction type could not be determined.")
-    );
+    return this.isMessageInteraction()
+      ? this.interaction.author
+      : this.isSlashInteraction()
+      ? this.interaction.user
+      : commandLogger.throw("Interaction type could not be determined.");
   }
 
   /**
@@ -494,19 +496,17 @@ export class CommandHelper<Type extends CommandType> {
    * @throws Will throw an error if the option map is not set in the command.
    */
   public getSubcommandGroupName(): string | undefined {
-    return this.isSlashInteraction() ?
-        (this.interaction.options.getSubcommandGroup(false) ?? undefined)
+    return this.isSlashInteraction()
+      ? this.interaction.options.getSubcommandGroup(false) ?? undefined
       : this.parseMessageInput().subcommandGroup?.getFileName();
   }
 
   public parseInput(override = false): ParsedInput {
-    return (
-      override ?
-        this.isMessageInteraction() ?
-          this.parseMessageInput()
+    return override
+      ? this.isMessageInteraction()
+        ? this.parseMessageInput()
         : this.parseSlashInput()
-      : this.parsedInput
-    );
+      : this.parsedInput;
   }
 
   /**
@@ -559,9 +559,9 @@ export class CommandHelper<Type extends CommandType> {
     const subcommandGroupName = subcommandGroup?.getFileName();
 
     const names = [
-      subcommandGroupName ?
-        `subcommandGroups.${subcommandGroupName}`
-      : undefined,
+      subcommandGroupName
+        ? `subcommandGroups.${subcommandGroupName}`
+        : undefined,
       extraPath,
     ].filter(isString);
 
@@ -575,9 +575,9 @@ export class CommandHelper<Type extends CommandType> {
     const subcommandName = subcommand?.getFileName();
 
     const names = [
-      subcommandGroupName ?
-        `subcommandGroups.${subcommandGroupName}`
-      : undefined,
+      subcommandGroupName
+        ? `subcommandGroups.${subcommandGroupName}`
+        : undefined,
       subcommandName ? `subcommands.${subcommandName}` : undefined,
       extraPath,
     ].filter(isString);
@@ -606,22 +606,20 @@ export class CommandHelper<Type extends CommandType> {
     const subcommandGroups = this.command.getSubcommandGroups();
 
     const subcommandName = this.getSubcommandName();
-    const subcommand =
-      subcommandName ?
-        (subcommands.find((subcommand) =>
+    const subcommand = subcommandName
+      ? subcommands.find((subcommand) =>
           subcommand.hasAnyName(subcommandName),
         ) ??
         subcommandGroups
           .find((subcommandGroup) =>
             subcommandGroup.getSubcommand(subcommandName),
           )
-          ?.getSubcommand(subcommandName))
+          ?.getSubcommand(subcommandName)
       : undefined;
 
     const subcommandGroupName = this.getSubcommandGroupName();
-    const subcommandGroup =
-      subcommandGroupName ?
-        subcommandGroups.find((subcommandGroup) =>
+    const subcommandGroup = subcommandGroupName
+      ? subcommandGroups.find((subcommandGroup) =>
           subcommandGroup.hasAnyName(subcommandGroupName),
         )
       : undefined;
@@ -629,15 +627,17 @@ export class CommandHelper<Type extends CommandType> {
     if (!this.interaction.options.data.length)
       return { subcommandGroup, subcommand };
 
-    const commandOptions =
-      subcommand ? subcommand.getOptions() : this.command.getOptions();
+    const commandOptions = subcommand
+      ? subcommand.getOptions()
+      : this.command.getOptions();
 
     const isSubcommandGroup = !!subcommandGroupName;
     const isSubcommand = !!subcommandName && !subcommandGroupName;
 
-    const optionType =
-      isSubcommandGroup ? ApplicationCommandOptionType.SubcommandGroup
-      : isSubcommand ? ApplicationCommandOptionType.Subcommand
+    const optionType = isSubcommandGroup
+      ? ApplicationCommandOptionType.SubcommandGroup
+      : isSubcommand
+      ? ApplicationCommandOptionType.Subcommand
       : undefined;
 
     let interactionOptions = this.interaction.options.data.filter((option) =>
@@ -710,9 +710,9 @@ export class CommandHelper<Type extends CommandType> {
       const options = commandOptions.map((option, index) => ({
         option,
         value:
-          index === others.length - 1 ?
-            others.slice(index).join(" ")
-          : others.at(index),
+          index === others.length - 1
+            ? others.slice(index).join(" ")
+            : others.at(index),
       }));
 
       return { subcommandGroup, subcommand, options };
@@ -722,16 +722,17 @@ export class CommandHelper<Type extends CommandType> {
       .getSubcommands()
       .find((subcommand) => subcommand.hasAnyName(firstArg));
 
-    const commandOptions =
-      subcommand ? subcommand.getOptions() : this.command.getOptions();
+    const commandOptions = subcommand
+      ? subcommand.getOptions()
+      : this.command.getOptions();
 
     const commandArgs = subcommand ? [secondArg, ...others] : this.args;
     const options = commandOptions.map((option, index) => ({
       option,
       value:
-        index === commandOptions.length - 1 ?
-          commandArgs.slice(index).join(" ")
-        : commandArgs.at(index),
+        index === commandOptions.length - 1
+          ? commandArgs.slice(index).join(" ")
+          : commandArgs.at(index),
     }));
 
     return { subcommand, options };
@@ -791,12 +792,13 @@ export class CommandHelper<Type extends CommandType> {
     }
 
     const finalOption =
-      isString(option) && optionType !== OptionTypes.String ?
-        optionParser ? optionParser(option)
-        : commandLogger.throw(
-            `Given option index "${optionIndex.toString()}" of type "${optionType}" in command (${this.command.getFilePath()}) requires a parser.`,
-          )
-      : (option.value as Data | undefined);
+      isString(option) && optionType !== OptionTypes.String
+        ? optionParser
+          ? optionParser(option)
+          : commandLogger.throw(
+              `Given option index "${optionIndex.toString()}" of type "${optionType}" in command (${this.command.getFilePath()}) requires a parser.`,
+            )
+        : (option.value as Data | undefined);
 
     return finalOption;
   }
@@ -806,13 +808,13 @@ export class CommandHelper<Type extends CommandType> {
 function booleanParser(
   input: string | boolean | undefined,
 ): boolean | undefined {
-  return (
-    isString(input) ?
-      ["True", "true"].includes(input) ? true
-      : ["False", "false"].includes(input) ? false
+  return isString(input)
+    ? ["True", "true"].includes(input)
+      ? true
+      : ["False", "false"].includes(input)
+      ? false
       : undefined
-    : input
-  );
+    : input;
 }
 
 function numberParser(input: string | undefined): number | undefined {
@@ -824,8 +826,8 @@ function numberParser(input: string | undefined): number | undefined {
 
 function integerParser(input: string | undefined): number | undefined {
   const parsedNumber = numberParser(input);
-  return parsedNumber && Number.isInteger(parsedNumber) ?
-      parsedNumber
+  return parsedNumber && Number.isInteger(parsedNumber)
+    ? parsedNumber
     : undefined;
 }
 

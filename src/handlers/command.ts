@@ -128,6 +128,7 @@ export async function readCommands(): Promise<Command[]> {
 
       if (!commandText) {
         commandLogger.error(
+          { key: "noLangTexts" },
           `No language texts found for command "${loggedPath}"`,
         );
         continue;
@@ -141,6 +142,7 @@ export async function readCommands(): Promise<Command[]> {
 
       if (!config) {
         commandLogger.warn(
+          { key: "invalidConfigExport" },
           `Invalid or empty command config export in "${loggedPath}"`,
         );
       }
@@ -164,14 +166,15 @@ export async function readCommands(): Promise<Command[]> {
           //! Reading subcommand group
 
           const subcommandGroupText =
-            "subcommandGroups" in commandText ?
-              commandText.subcommandGroups[
-                subFile.name as keyof typeof commandText
-              ]
-            : undefined;
+            "subcommandGroups" in commandText
+              ? commandText.subcommandGroups[
+                  subFile.name as keyof typeof commandText
+                ]
+              : undefined;
 
           if (!subcommandGroupText) {
             commandLogger.error(
+              { key: "noLangTexts" },
               `No language texts found for subcommand group "${loggedPath}"`,
             );
             continue;
@@ -184,6 +187,7 @@ export async function readCommands(): Promise<Command[]> {
 
           if (!subcommandGroupConfig) {
             commandLogger.warn(
+              { key: "invalidConfigExport" },
               `Invalid or empty subcommand group config export in "${subGroupImportPath}"`,
             );
           }
@@ -210,6 +214,7 @@ export async function readCommands(): Promise<Command[]> {
 
             if (!subcommand) {
               commandLogger.error(
+                { key: "invalidCommandExport" },
                 `Invalid subcommand export in "${subGroupImportPath}"`,
               );
               continue;
@@ -223,6 +228,7 @@ export async function readCommands(): Promise<Command[]> {
 
             if (!subcommandText) {
               commandLogger.error(
+                { key: "noLangTexts" },
                 `No language texts found for subcommand "${loggedPath}"`,
               );
               continue;
@@ -234,13 +240,15 @@ export async function readCommands(): Promise<Command[]> {
 
           if (!groupSubcommands.length) {
             commandLogger.warn(
+              { key: "emptySubcommandGroup" },
               `No suitable subcommands found in "${subGroupImportPath}"`,
             );
             continue;
           }
 
-          const subcommandGroupInput =
-            subcommandGroupConfig ? { config: subcommandGroupConfig } : {};
+          const subcommandGroupInput = subcommandGroupConfig
+            ? { config: subcommandGroupConfig }
+            : {};
 
           const subcommandGroup = new SubcommandGroup(subcommandGroupInput);
           subcommandGroup.addSubcommands(groupSubcommands);
@@ -254,6 +262,7 @@ export async function readCommands(): Promise<Command[]> {
 
           if (!subcommand) {
             commandLogger.error(
+              { key: "invalidCommandExport" },
               `Invalid subcommand export in "${subGroupImportPath}"`,
             );
             continue;
@@ -263,12 +272,13 @@ export async function readCommands(): Promise<Command[]> {
           const subcommandName = subcommand.getFileName();
 
           const subcommandText =
-            "subcommands" in commandText ?
-              commandText.subcommands[subcommandName]
-            : undefined;
+            "subcommands" in commandText
+              ? commandText.subcommands[subcommandName]
+              : undefined;
 
           if (!subcommandText) {
             commandLogger.error(
+              { key: "noLangTexts" },
               `No language texts found for subcommand "${loggedPath}"`,
             );
             continue;
@@ -295,7 +305,10 @@ export async function readCommands(): Promise<Command[]> {
       const command = await readClassFile(Command, loggedPath);
 
       if (!command) {
-        commandLogger.error(`Invalid command export in "${loggedPath}"`);
+        commandLogger.error(
+          { key: "invalidCommandExport" },
+          `Invalid command export in "${loggedPath}"`,
+        );
         continue;
       }
 
@@ -331,6 +344,7 @@ export async function registerSlashCommands(
     );
   } else {
     commandLogger.warn(
+      { key: "noRegister" },
       "Slash commands are not registered. Set commands.registerOnStart to true in the config to register slash commands.",
     );
   }
@@ -425,8 +439,8 @@ function compileSubcommandGroup(
     );
   }
 
-  return subcommands.length ?
-      { ...newBuilder, options: subcommands }
+  return subcommands.length
+    ? { ...newBuilder, options: subcommands }
     : newBuilder;
 }
 
@@ -508,18 +522,21 @@ function compileCommandOptions<Builder extends object>(
     const commandOption = option.getSettings();
 
     const finalChoices =
-      "choices" in commandOption ?
-        commandOption.choices.every(isObject) ? commandOption.choices
-        : "choices" in languageOption ?
-          (languageOption.choices as { name: string }[]).map((data, index) => ({
-            ...data,
-            value: commandOption.choices![index]!,
-          }))
-        : commandOption.choices.map((choice) => ({
-            name: choice,
-            value: choice,
-          }))
-      : [];
+      "choices" in commandOption
+        ? commandOption.choices.every(isObject)
+          ? commandOption.choices
+          : "choices" in languageOption
+          ? (languageOption.choices as { name: string }[]).map(
+              (data, index) => ({
+                ...data,
+                value: commandOption.choices![index]!,
+              }),
+            )
+          : commandOption.choices.map((choice) => ({
+              name: choice,
+              value: choice,
+            }))
+        : [];
 
     return convertToSnakeCase({
       ...commandOption,

@@ -1,4 +1,8 @@
 import chalk from "chalk";
+import { getConfig } from "../handlers/config.js";
+import { getInnerObjectValue } from "./objects.js";
+import { isBoolean, isObject, isString } from "@wyntine/verifier";
+import type { LogControlKey } from "../types/utils.types.js";
 
 export enum LogLevel {
   ERROR = "error",
@@ -41,7 +45,9 @@ export class Logger {
       .join(` ${chalk.bold("•")} `);
 
     const color = LogLevelMap[level];
-    return `[${coloredTimestamp}] [${chalk.hex("#F7F6CF")(this.prefix)}] [${color(level.toUpperCase())}]:`;
+    return `[${coloredTimestamp}] [${chalk.hex("#F7F6CF")(
+      this.prefix,
+    )}] [${color(level.toUpperCase())}]:`;
   }
 
   private log(level: LogLevel, messages: unknown[]): void {
@@ -49,20 +55,48 @@ export class Logger {
     console.log(logMessage, ...messages);
   }
 
+  private logConditionally(level: LogLevel, messages: unknown[]): void {
+    const [key, ...others] = messages;
+
+    if (!isObject(key)) {
+      this.log(level, messages);
+    } else {
+      if ("key" in key && isString(key.key)) {
+        const value = getInnerObjectValue(
+          getConfig().logs,
+          `${level}.${key.key}`,
+        );
+
+        if (isBoolean(value)) {
+          if (!value) return;
+
+          this.log(level, others);
+          return;
+        }
+      }
+
+      this.log(level, messages);
+    }
+  }
+
+  public error(controlKey: LogControlKey, ...messages: unknown[]): void;
+  public error(...messages: unknown[]): void;
   public error(...messages: unknown[]): void {
-    this.log(LogLevel.ERROR, messages);
+    this.logConditionally(LogLevel.ERROR, messages);
   }
 
   public info(...messages: unknown[]): void {
-    this.log(LogLevel.INFO, messages);
+    this.logConditionally(LogLevel.INFO, messages);
   }
 
   public debug(...messages: unknown[]): void {
-    this.log(LogLevel.DEBUG, messages);
+    this.logConditionally(LogLevel.DEBUG, messages);
   }
 
+  public warn(controlKey: LogControlKey, ...messages: unknown[]): void;
+  public warn(...messages: unknown[]): void;
   public warn(...messages: unknown[]): void {
-    this.log(LogLevel.WARN, messages);
+    this.logConditionally(LogLevel.WARN, messages);
   }
 
   /**
