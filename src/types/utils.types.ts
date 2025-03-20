@@ -13,11 +13,19 @@ import type { Command } from "../classes/command.js";
 import type { JsonDatabaseController } from "../handlers/database/controllers/jsonController.js";
 import type { YamlDatabaseController } from "../handlers/database/controllers/yamlController.js";
 
-export type RequiredStringMap<Map> =
-  Map extends StringMap<infer Type> ? Record<string, Type> : Map;
+export interface LogControlKey {
+  key: string;
+}
 
-export type FixedSizeArray<T, N extends number, R extends T[] = []> =
-  R["length"] extends N ? R : FixedSizeArray<T, N, [T, ...R]>;
+export type RequiredStringMap<Map> = Map extends StringMap<infer Type>
+  ? Record<string, Type>
+  : Map;
+
+export type FixedSizeArray<
+  T,
+  N extends number,
+  R extends T[] = [],
+> = R["length"] extends N ? R : FixedSizeArray<T, N, [T, ...R]>;
 
 export interface CommandHelperOptions<Type extends CommandType> {
   interaction: CommandInteractionType<Type>;
@@ -26,9 +34,11 @@ export interface CommandHelperOptions<Type extends CommandType> {
 }
 
 export type HelperReplyOptions<Type extends CommandType> =
-  Type extends CommandType.Message ? MessageReplyOptions
-  : Type extends CommandType.Slash ? InteractionReplyOptions
-  : MessageReplyOptions | InteractionReplyOptions;
+  Type extends CommandType.Message
+    ? MessageReplyOptions
+    : Type extends CommandType.Slash
+    ? InteractionReplyOptions
+    : MessageReplyOptions | InteractionReplyOptions;
 
 export enum OptionTypes {
   Role = "role",
@@ -76,9 +86,11 @@ export enum DatabaseType {
   YAML = "yaml",
 }
 export type DatabaseOptions<Type extends DatabaseType> =
-  Type extends DatabaseType.JSON ? FileDatabaseOptions
-  : Type extends DatabaseType.YAML ? FileDatabaseOptions
-  : never;
+  Type extends DatabaseType.JSON
+    ? FileDatabaseOptions
+    : Type extends DatabaseType.YAML
+    ? FileDatabaseOptions
+    : never;
 
 export interface FileDatabaseOptions {
   filePath: string;
@@ -108,41 +120,38 @@ export type ObjectKeyMap<
   Obj extends object,
   RequiredObj = DeepRequired<Obj>,
 > = {
-  [Key in keyof RequiredObj]: Key extends string ?
-    RequiredObj[Key] extends object ?
-      `${Key}.${ObjectKeyMap<RequiredObj[Key]>}`
-    : Key
-  : never;
+  [Key in keyof RequiredObj]: Key extends string
+    ? RequiredObj[Key] extends object
+      ? `${Key}.${ObjectKeyMap<RequiredObj[Key]>}`
+      : Key
+    : never;
 }[keyof RequiredObj];
 
-export type GetItemFromKeyMap<Obj, Key extends string> =
-  Obj extends object ?
-    Key extends `${infer FirstKey}.${infer OtherKeys}` ?
-      FirstKey extends keyof Obj ?
-        Obj[FirstKey] extends object ?
-          GetItemFromKeyMap<Obj[FirstKey], OtherKeys>
+export type GetItemFromKeyMap<Obj, Key extends string> = Obj extends object
+  ? Key extends `${infer FirstKey}.${infer OtherKeys}`
+    ? FirstKey extends keyof Obj
+      ? Obj[FirstKey] extends object
+        ? GetItemFromKeyMap<Obj[FirstKey], OtherKeys>
         : undefined
       : undefined
-    : Key extends string ?
-      Key extends keyof Required<Obj> ?
-        Obj[Key]
+    : Key extends string
+    ? Key extends keyof Required<Obj>
+      ? Obj[Key]
       : undefined
     : never
   : Obj;
 
-export type DeepPartial<Obj> =
-  Obj extends object ?
-    Obj extends unknown[] ?
-      Obj
+export type DeepPartial<Obj> = Obj extends object
+  ? Obj extends unknown[]
+    ? Obj
     : {
         [Key in keyof Obj]?: DeepPartial<Obj[Key]>;
       }
   : Obj;
 
-export type DeepRequired<Obj> =
-  Obj extends object ?
-    Obj extends unknown[] ?
-      Obj
+export type DeepRequired<Obj> = Obj extends object
+  ? Obj extends unknown[]
+    ? Obj
     : {
         [Key in keyof Obj]-?: DeepRequired<Obj[Key]>;
       }
