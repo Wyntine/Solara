@@ -5,4 +5,16 @@ bot:
     - "dev-id"
 commands:
   defaultPrefix: ">"
-  registerOnStart: false # Optional, set true to register slash commands on start
+  registerOnStart: true # Optional, set true to register slash commands on start
+logs:
+  warn:
+    invalidConfigExport: true # Empty or invalid command/subcommand group config
+    emptySubcommandGroup: true # No subcommand is suitable in a subcommand group
+    noRegister: true # Slash commands are not registered on start
+    noCooldown: true # No cooldown is set for given command
+  error:
+    noLangTexts: true # No language texts found for given command
+    invalidCommandExport: true # Invalid command/subcommand
+    configError: true # Config error
+    noDefaultExport: true # No default class export
+    wrongClass: true # Wrong class export
