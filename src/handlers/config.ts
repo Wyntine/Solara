@@ -6,3 +6,7 @@ export const config = new Config<BaseConfigData>({
   configPath: "./config.yml",
   configVerification: configVerifier,
 });
+
+export function getConfig() {
+  return config.get();
+}
