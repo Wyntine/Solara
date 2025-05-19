@@ -5,11 +5,11 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "start": "node --experimental-transform-types ./src/index.ts",
+    "start": "node --no-warnings --experimental-transform-types ./src/index.ts",
     "lint": "run-s typeCheck eslint",
     "eslint": "eslint --fix ./src",
     "typeCheck": "tsc --project ./ --noEmit",
-    "test": "tsx src/test.ts",
+    "test": "node --no-warnings --experimental-transform-types src/test.ts",
     "test:vitest": "vitest",
     "test:coverage": "vitest --coverage",
     "test:run": "vitest run"
