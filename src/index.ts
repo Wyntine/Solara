@@ -9,8 +9,10 @@ import {
   eventLogger,
   languageLogger,
 } from "./handlers/logger.ts";
+import { checkHotReloadStatus } from "./utils/files.ts";
 
 checkDatabaseFolder();
+checkHotReloadStatus();
 
 const {
   bot: { token },

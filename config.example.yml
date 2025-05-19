@@ -18,6 +18,7 @@ commands:
   registerOnStart: true # Optional, set true to register slash commands on start
 logs:
   warn:
+    hotReloadWithoutPatch: true # Optional, "Hot reload is enabled, but you do not have custom Node.js build..." warning
     invalidConfigExport: true # Optional, "Empty or invalid command/subcommand group config" warning
     emptySubcommandGroup: true # Optional, "No subcommand is suitable in a subcommand group" warning
     noRegister: true # Optional, "Slash commands are not registered on start" warning
