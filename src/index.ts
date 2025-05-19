@@ -1,14 +1,14 @@
-import { checkDatabaseFolder } from "./handlers/database/database.js";
-import { client } from "./utils/client.js";
-import { config } from "./handlers/config.js";
-import { registerEvents } from "./handlers/event.js";
-import { registerLangs } from "./handlers/language.js";
-import { registerCommands } from "./handlers/command.js";
+import { checkDatabaseFolder } from "./handlers/database/database.ts";
+import { client } from "./utils/client.ts";
+import { config } from "./handlers/config.ts";
+import { registerEvents } from "./handlers/event.ts";
+import { registerLangs } from "./handlers/language.ts";
+import { registerCommands } from "./handlers/command.ts";
 import {
   commandLogger,
   eventLogger,
   languageLogger,
-} from "./handlers/logger.js";
+} from "./handlers/logger.ts";
 
 checkDatabaseFolder();
 

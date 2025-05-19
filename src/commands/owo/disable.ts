@@ -1,6 +1,6 @@
-import { CommandOptionConfig } from "../../classes/commandOptions.js";
-import { Option } from "../../classes/option.js";
-import { Subcommand } from "../../classes/subcommand.js";
+import { CommandOptionConfig } from "../../classes/commandOptions.ts";
+import { Option } from "../../classes/option.ts";
+import { Subcommand } from "../../classes/subcommand.ts";
 
 const stringOption = Option.createStringOption();
 const options = new CommandOptionConfig(stringOption);

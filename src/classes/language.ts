@@ -1,4 +1,4 @@
-import { languageLogger } from "../handlers/logger.js";
+import { languageLogger } from "../handlers/logger.ts";
 import { Locale } from "discord.js";
 import type {
   GetCommandTextResult,
@@ -10,10 +10,10 @@ import type {
   LanguageOptions,
   LanguageTexts,
   PartialIsExecutableErrors,
-} from "../types/files.types.js";
-import type { StringMap } from "../types/utils.types.js";
+} from "../types/files.types.ts";
+import type { StringMap } from "../types/utils.types.ts";
 import { isString } from "@wyntine/verifier";
-import { getInnerObjectValue } from "../utils/objects.js";
+import { getInnerObjectValue } from "../utils/objects.ts";
 
 export class Language {
   public languages: Locale[];
@@ -60,9 +60,8 @@ export class Language {
     Key extends IsExecutableErrorKeys | undefined = undefined,
   >(key?: Key): GetErrorMessageReturn<Key> {
     return (
-      key ?
-        getInnerObjectValue(this.errorMessages, key)
-      : this.errorMessages) as GetErrorMessageReturn<Key>;
+      key ? getInnerObjectValue(this.errorMessages, key) : this.errorMessages
+    ) as GetErrorMessageReturn<Key>;
   }
 
   /**

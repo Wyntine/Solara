@@ -1,6 +1,6 @@
-import { Event } from "../classes/event.js";
-import { registerSlashCommands } from "../handlers/command.js";
-import { systemLogger } from "../handlers/logger.js";
+import { Event } from "../classes/event.ts";
+import { registerSlashCommands } from "../handlers/command.ts";
+import { systemLogger } from "../handlers/logger.ts";
 
 export default new Event({
   category: "ready",

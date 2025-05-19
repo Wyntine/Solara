@@ -1,8 +1,8 @@
-import { configLogger } from "../handlers/logger.js";
+import { configLogger } from "../handlers/logger.ts";
 import { load } from "js-yaml";
 import { readFileSync } from "fs";
 import { watchFile } from "fs";
-import type { ConfigOptions } from "../types/files.types.js";
+import type { ConfigOptions } from "../types/files.types.ts";
 import type { ObjectVerifier } from "@wyntine/verifier";
 
 export class Config<Data> {

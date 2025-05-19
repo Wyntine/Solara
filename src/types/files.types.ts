@@ -17,16 +17,16 @@ import {
   type ObjectKeyMap,
   type OptionDataTypes,
   type StringMap,
-} from "./utils.types.js";
-import type { Command } from "../classes/command.js";
-import type { CommandHelper } from "../utils/commands.js";
-import type { Language } from "../classes/language.js";
+} from "./utils.types.ts";
+import type { Command } from "../classes/command.ts";
+import type { CommandHelper } from "../utils/commands.ts";
+import type { Language } from "../classes/language.ts";
 import type { ObjectVerifier } from "@wyntine/verifier";
-import type { CommandConfig } from "../classes/commandConfig.js";
-import type { CommandOptionConfig } from "../classes/commandOptions.js";
-import type { Subcommand } from "../classes/subcommand.js";
-import type { SubcommandGroup } from "../classes/subcommandGroup.js";
-import type { Option } from "../classes/option.js";
+import type { CommandConfig } from "../classes/commandConfig.ts";
+import type { CommandOptionConfig } from "../classes/commandOptions.ts";
+import type { Subcommand } from "../classes/subcommand.ts";
+import type { SubcommandGroup } from "../classes/subcommandGroup.ts";
+import type { Option } from "../classes/option.ts";
 
 //* Events
 
@@ -148,14 +148,18 @@ export enum CommandType {
 }
 
 export type CommandInteractionType<Type extends CommandType> =
-  Type extends CommandType.Slash ? ChatInputCommandInteraction
-  : Type extends CommandType.Message ? Message
-  : CombinedInteraction;
+  Type extends CommandType.Slash
+    ? ChatInputCommandInteraction
+    : Type extends CommandType.Message
+    ? Message
+    : CombinedInteraction;
 
 export type CommandReplyType<Type extends CommandType> =
-  Type extends CommandType.Slash ? InteractionResponse
-  : Type extends CommandType.Message ? Message
-  : InteractionResponse | Message;
+  Type extends CommandType.Slash
+    ? InteractionResponse
+    : Type extends CommandType.Message
+    ? Message
+    : InteractionResponse | Message;
 
 export type CommandOptionsData<OptionType extends OptionTypes = OptionTypes> = {
   [OptionTypes.String]: StringOption;
@@ -239,9 +243,9 @@ export type LanguageOptionsOnlyTexts<Data> = {
 } & Data;
 
 export type LanguageOptionTextData<Data> = {
-  choices?: Data extends FinalLanguageBaseCommandTexts ?
-    Partial<FinalLanguageBaseCommandTexts>[]
-  : string[];
+  choices?: Data extends FinalLanguageBaseCommandTexts
+    ? Partial<FinalLanguageBaseCommandTexts>[]
+    : string[];
 } & Data;
 
 export type LanguageSubcommandsOnlyTexts<Data> = {
@@ -319,8 +323,9 @@ export type GetTextResult<Key extends keyof LanguageTexts | undefined> =
   Key extends string ? LanguageTexts[Key] : LanguageTexts;
 
 export type GetCommandTextResult<Key extends string | undefined> =
-  Key extends string ? LanguageCommandTexts<LanguageBaseCommandTexts>
-  : StringMap<LanguageCommandTexts<LanguageBaseCommandTexts>>;
+  Key extends string
+    ? LanguageCommandTexts<LanguageBaseCommandTexts>
+    : StringMap<LanguageCommandTexts<LanguageBaseCommandTexts>>;
 
 export type Replacer<StringSize extends number> = (
   ...strings: FixedSizeArray<string, StringSize>

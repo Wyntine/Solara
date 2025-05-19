@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "fs";
-import { pruneObject } from "../../../utils/objects.js";
-import { ControllerModel, type DataSetter } from "../controllerModel.js";
+import { pruneObject } from "../../../utils/objects.ts";
+import { ControllerModel, type DataSetter } from "../controllerModel.ts";
 
 export class JsonDatabaseController<Data> implements ControllerModel<Data> {
   private data: Data;
@@ -24,9 +24,9 @@ export class JsonDatabaseController<Data> implements ControllerModel<Data> {
     value: Data[Key] | DataSetter<Data, Key>,
   ): void {
     this.data[key] =
-      typeof value === "function" ?
-        (value as DataSetter<Data, Key>)(this.data[key])
-      : value;
+      typeof value === "function"
+        ? (value as DataSetter<Data, Key>)(this.data[key])
+        : value;
 
     const newData = JSON.stringify(pruneObject(this.data), undefined, 2);
     writeFileSync(this.filePath, newData);
@@ -42,12 +42,13 @@ export class JsonDatabaseController<Data> implements ControllerModel<Data> {
 
   private loadData(): Data {
     const data = (
-      existsSync(this.filePath) ?
-        JSON.parse(readFileSync(this.filePath, "utf8"))
-      : (() => {
-          writeFileSync(this.filePath, JSON.stringify({}, undefined, 2));
-          return {};
-        })()) as Data;
+      existsSync(this.filePath)
+        ? JSON.parse(readFileSync(this.filePath, "utf8"))
+        : (() => {
+            writeFileSync(this.filePath, JSON.stringify({}, undefined, 2));
+            return {};
+          })()
+    ) as Data;
     return data;
   }
 }

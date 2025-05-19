@@ -1,13 +1,13 @@
-import { databaseLogger } from "../logger.js";
+import { databaseLogger } from "../logger.ts";
 import { existsSync, mkdirSync } from "fs";
-import { JsonDatabaseController } from "./controllers/jsonController.js";
-import { YamlDatabaseController } from "./controllers/yamlController.js";
+import { JsonDatabaseController } from "./controllers/jsonController.ts";
+import { YamlDatabaseController } from "./controllers/yamlController.ts";
 import {
   DatabaseType,
   type DatabaseControllers,
   type DatabaseOptions,
-} from "../../types/utils.types.js";
-import { ControllerModel, type DataSetter } from "./controllerModel.js";
+} from "../../types/utils.types.ts";
+import { ControllerModel, type DataSetter } from "./controllerModel.ts";
 
 export class Database<Data, Type extends DatabaseType>
   implements ControllerModel<Data>
@@ -45,13 +45,11 @@ export class Database<Data, Type extends DatabaseType>
   private createController(
     options: DatabaseOptions<Type>,
   ): DatabaseControllers<Data> {
-    return (
-      this.type === DatabaseType.JSON ?
-        new JsonDatabaseController<Data>(options.filePath)
-      : this.type === DatabaseType.YAML ?
-        new YamlDatabaseController<Data>(options.filePath)
-      : databaseLogger.throw("Not implemented")
-    );
+    return this.type === DatabaseType.JSON
+      ? new JsonDatabaseController<Data>(options.filePath)
+      : this.type === DatabaseType.YAML
+      ? new YamlDatabaseController<Data>(options.filePath)
+      : databaseLogger.throw("Not implemented");
   }
 }
 

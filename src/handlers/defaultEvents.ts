@@ -1,11 +1,11 @@
 import type { Interaction, Message } from "discord.js";
-import { errorEmbed } from "../utils/embeds.js";
+import { errorEmbed } from "../utils/embeds.ts";
 import {
   prepareMessageCommandHelper,
   prepareSlashCommandHelper,
-} from "./command.js";
+} from "./command.ts";
 import { isNumber } from "@wyntine/verifier";
-import { voidErrorHandler } from "../utils/client.js";
+import { voidErrorHandler } from "../utils/client.ts";
 
 export async function defaultCommandDetectionEvent(
   interaction: Interaction | Message,
@@ -14,9 +14,8 @@ export async function defaultCommandDetectionEvent(
 
   if (!isMessageInteraction && !interaction.isChatInputCommand()) return;
 
-  const helpers =
-    isMessageInteraction ?
-      prepareMessageCommandHelper(interaction)
+  const helpers = isMessageInteraction
+    ? prepareMessageCommandHelper(interaction)
     : prepareSlashCommandHelper(interaction);
 
   if (!helpers) return;

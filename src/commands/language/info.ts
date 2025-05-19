@@ -1,9 +1,9 @@
-import { Subcommand } from "../../classes/subcommand.js";
-import { userDatabase } from "../../handlers/database.js";
-import { getLanguage, getLanguageByCode } from "../../handlers/language.js";
-import { isSlashInteraction } from "../../utils/commands.js";
-import { infoEmbed } from "../../utils/embeds.js";
-import { strJoin } from "../../utils/strings.js";
+import { Subcommand } from "../../classes/subcommand.ts";
+import { userDatabase } from "../../handlers/database.ts";
+import { getLanguage, getLanguageByCode } from "../../handlers/language.ts";
+import { isSlashInteraction } from "../../utils/commands.ts";
+import { infoEmbed } from "../../utils/embeds.ts";
+import { strJoin } from "../../utils/strings.ts";
 
 export default new Subcommand({
   execute({ helpers, language, interaction }) {
@@ -12,9 +12,8 @@ export default new Subcommand({
     const userLanguage =
       getLanguageByCode(userDatabase.get(userId)?.language)?.name ??
       texts.notDefined;
-    const accountLanguage =
-      isSlashInteraction(interaction) ?
-        (getLanguage(interaction.locale)?.name ?? texts.unknown)
+    const accountLanguage = isSlashInteraction(interaction)
+      ? getLanguage(interaction.locale)?.name ?? texts.unknown
       : texts.unknown;
 
     const infoMessage = strJoin([

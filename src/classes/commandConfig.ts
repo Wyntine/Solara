@@ -1,9 +1,9 @@
 import { InteractionContextType } from "discord.js";
-import { commandLogger } from "../handlers/logger.js";
+import { commandLogger } from "../handlers/logger.ts";
 import {
   CommandType,
   type CommandConfigOptions,
-} from "../types/files.types.js";
+} from "../types/files.types.ts";
 
 export class CommandConfig<Type extends CommandType = CommandType.Combined> {
   public type: Type;

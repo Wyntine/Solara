@@ -2,14 +2,14 @@ import {
   type CommandExecuteFunction,
   type CommandOptions,
   CommandType,
-} from "../types/files.types.js";
-import { Subcommand } from "./subcommand.js";
-import type { SubcommandGroup } from "./subcommandGroup.js";
-import type { CommandOptionConfig } from "./commandOptions.js";
-import { CommandConfig } from "./commandConfig.js";
-import { CommandHelper } from "../utils/commands.js";
-import { LanguageCommand } from "./languageCommand.js";
-import type { Option } from "./option.js";
+} from "../types/files.types.ts";
+import { Subcommand } from "./subcommand.ts";
+import type { SubcommandGroup } from "./subcommandGroup.ts";
+import type { CommandOptionConfig } from "./commandOptions.ts";
+import { CommandConfig } from "./commandConfig.ts";
+import { CommandHelper } from "../utils/commands.ts";
+import { LanguageCommand } from "./languageCommand.ts";
+import type { Option } from "./option.ts";
 
 export class Command<
   Type extends CommandType = CommandType,

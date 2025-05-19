@@ -1,4 +1,4 @@
-import type { Option } from "./option.js";
+import type { Option } from "./option.ts";
 
 export class CommandOptionConfig {
   private options: Option[] = [];

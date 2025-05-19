@@ -2,7 +2,7 @@ import { join } from "path";
 import { isObject } from "@wyntine/verifier";
 import { readdir } from "fs/promises";
 import type { Dirent } from "fs";
-import type { Logger } from "./logger.js";
+import type { Logger } from "./logger.ts";
 
 export const dev = process.env["NODE_ENV"] !== "production";
 
@@ -42,7 +42,8 @@ export async function readClassDirectory<
     const loggedPath = filePath.slice(basePath.length + 1);
 
     const fileImportPath = join("..", "..", filePath)
-      .replace(".ts", ".js")
+      // TODO: Revert if not works.
+      // .replace(".ts", ".js")
       .replaceAll("\\", "/");
     const fileImport: unknown = await import(fileImportPath);
 
@@ -77,9 +78,9 @@ export async function readClassDirectory<
 export function scriptFileFilter(this: void, file: Dirent): boolean {
   return (
     file.isFile() &&
-    (dev ?
-      file.name.endsWith(".ts") && !file.name.endsWith(".d.ts")
-    : file.name.endsWith(".js"))
+    (dev
+      ? file.name.endsWith(".ts") && !file.name.endsWith(".d.ts")
+      : file.name.endsWith(".js"))
   );
 }
 
@@ -92,7 +93,8 @@ export async function readClassFile<
 ): Promise<InstanceType<Class> | undefined> {
   try {
     const fileImportPath = join("..", path)
-      .replace(".ts", ".js")
+      // TODO: Revert if not works.
+      // .replace(".ts", ".js")
       .replaceAll("\\", "/");
     const fileImport: unknown = await import(fileImportPath);
 

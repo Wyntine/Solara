@@ -1,9 +1,9 @@
-import { client } from "../utils/client.js";
-import { Event } from "../classes/event.js";
-import { eventLogger } from "./logger.js";
-import { readClassDirectory } from "../utils/readClassDirectory.js";
+import { client } from "../utils/client.ts";
+import { Event } from "../classes/event.ts";
+import { eventLogger } from "./logger.ts";
+import { readClassDirectory } from "../utils/readClassDirectory.ts";
 import type { ClientEvents } from "discord.js";
-import type { Categories } from "../types/files.types.js";
+import type { Categories } from "../types/files.types.ts";
 
 const eventMap = new Map<Categories, Event[]>();
 const eventsDir = "events";

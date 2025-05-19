@@ -7,11 +7,11 @@ import {
   type Role,
   type User,
 } from "discord.js";
-import type { CommandInteractionType, CommandType } from "./files.types.js";
+import type { CommandInteractionType, CommandType } from "./files.types.ts";
 
-import type { Command } from "../classes/command.js";
-import type { JsonDatabaseController } from "../handlers/database/controllers/jsonController.js";
-import type { YamlDatabaseController } from "../handlers/database/controllers/yamlController.js";
+import type { Command } from "../classes/command.ts";
+import type { JsonDatabaseController } from "../handlers/database/controllers/jsonController.ts";
+import type { YamlDatabaseController } from "../handlers/database/controllers/yamlController.ts";
 
 export interface LogControlKey {
   key: string;

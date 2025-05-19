@@ -1,5 +1,5 @@
-import { createReplacer } from "../utils/strings.js";
-import { Language } from "../classes/language.js";
+import { createReplacer } from "../utils/strings.ts";
+import { Language } from "../classes/language.ts";
 import { Locale } from "discord.js";
 
 export default new Language({

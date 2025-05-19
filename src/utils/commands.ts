@@ -1,6 +1,6 @@
-import { client } from "./client.js";
-import { commandLogger } from "../handlers/logger.js";
-import { config } from "../handlers/config.js";
+import { client } from "./client.ts";
+import { commandLogger } from "../handlers/logger.ts";
+import { config } from "../handlers/config.ts";
 import {
   ApplicationCommandOptionType,
   ChatInputCommandInteraction,
@@ -21,7 +21,7 @@ import {
   type HelperReplyOptions,
   type OptionDataTypes,
   type OptionParser,
-} from "../types/utils.types.js";
+} from "../types/utils.types.ts";
 import type {
   CombinedInteraction,
   CommandExecuteData,
@@ -32,18 +32,18 @@ import type {
   IsExecutableStatus,
   ParsedInput,
   PartialIsExecutableErrors,
-} from "../types/files.types.js";
-import type { Command } from "../classes/command.js";
-import type { Language } from "../classes/language.js";
+} from "../types/files.types.ts";
+import type { Command } from "../classes/command.ts";
+import type { Language } from "../classes/language.ts";
 import { isNumber, isString } from "@wyntine/verifier";
-import { getLanguage, getLanguageByCode } from "../handlers/language.js";
+import { getLanguage, getLanguageByCode } from "../handlers/language.ts";
 import {
   commandExecutionMap,
   cooldowns,
   userDatabase,
-} from "../handlers/database.js";
-import type { Option } from "../classes/option.js";
-import { getInnerObjectValue, mapPlaceholders } from "./objects.js";
+} from "../handlers/database.ts";
+import type { Option } from "../classes/option.ts";
+import { getInnerObjectValue, mapPlaceholders } from "./objects.ts";
 
 export function isSlashInteraction(
   interaction: CombinedInteraction,

@@ -1,10 +1,10 @@
 import {
   CommandType,
   type SubcommandGroupOptions,
-} from "../types/files.types.js";
-import { CommandConfig } from "./commandConfig.js";
-import { LanguageCommand } from "./languageCommand.js";
-import type { Subcommand } from "./subcommand.js";
+} from "../types/files.types.ts";
+import { CommandConfig } from "./commandConfig.ts";
+import { LanguageCommand } from "./languageCommand.ts";
+import type { Subcommand } from "./subcommand.ts";
 
 export class SubcommandGroup<
   Type extends CommandType = CommandType,

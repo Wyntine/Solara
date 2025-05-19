@@ -1,18 +1,18 @@
-import { Command } from "../classes/command.js";
-import { commandLogger } from "./logger.js";
+import { Command } from "../classes/command.ts";
+import { commandLogger } from "./logger.ts";
 import {
   baseDir,
   dev,
   readClassFile,
   scriptFileFilter,
-} from "../utils/readClassDirectory.js";
+} from "../utils/readClassDirectory.ts";
 
 import {
   CommandType,
   type CommandOptions,
   type FinalLanguageBaseCommandTexts,
   type LanguageCommandTexts,
-} from "../types/files.types.js";
+} from "../types/files.types.ts";
 import {
   ApplicationCommandOptionType,
   ApplicationCommandType,
@@ -21,20 +21,20 @@ import {
   Message,
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from "discord.js";
-import { config } from "./config.js";
-import { OptionCommandTypeMap, type StringMap } from "../types/utils.types.js";
+import { config } from "./config.ts";
+import { OptionCommandTypeMap, type StringMap } from "../types/utils.types.ts";
 import { join } from "path";
 import { readdir } from "fs/promises";
-import { CommandConfig } from "../classes/commandConfig.js";
-import { Subcommand } from "../classes/subcommand.js";
-import { SubcommandGroup } from "../classes/subcommandGroup.js";
+import { CommandConfig } from "../classes/commandConfig.ts";
+import { Subcommand } from "../classes/subcommand.ts";
+import { SubcommandGroup } from "../classes/subcommandGroup.ts";
 import {
   convertToSnakeCase,
   getObjectSize,
   removeKey,
-} from "../utils/objects.js";
-import { getCommandText } from "./language.js";
-import { CommandHelper } from "../utils/commands.js";
+} from "../utils/objects.ts";
+import { getCommandText } from "./language.ts";
+import { CommandHelper } from "../utils/commands.ts";
 import { isObject } from "@wyntine/verifier";
 
 let commands: Command[] = [];

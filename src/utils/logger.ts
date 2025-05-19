@@ -1,8 +1,8 @@
 import chalk from "chalk";
-import { getConfig } from "../handlers/config.js";
-import { getInnerObjectValue } from "./objects.js";
+import { getConfig } from "../handlers/config.ts";
+import { getInnerObjectValue } from "./objects.ts";
 import { isBoolean, isObject, isString } from "@wyntine/verifier";
-import type { LogControlKey } from "../types/utils.types.js";
+import type { LogControlKey } from "../types/utils.types.ts";
 
 export enum LogLevel {
   ERROR = "error",

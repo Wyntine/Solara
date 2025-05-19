@@ -4,12 +4,12 @@ import type {
   CommandNames,
   FinalLanguageBaseCommandTexts,
   LanguageCommandTexts,
-} from "../types/files.types.js";
+} from "../types/files.types.ts";
 import { isString } from "@wyntine/verifier";
-import { commandLogger } from "../handlers/logger.js";
+import { commandLogger } from "../handlers/logger.ts";
 import { basename } from "path";
-import { getCommandText } from "../handlers/language.js";
-import { dev } from "../utils/readClassDirectory.js";
+import { getCommandText } from "../handlers/language.ts";
+import { dev } from "../utils/readClassDirectory.ts";
 
 export class LanguageCommand {
   protected commandPath?: string;

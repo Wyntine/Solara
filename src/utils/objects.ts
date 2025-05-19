@@ -4,7 +4,7 @@ import type {
   ObjectKeyMap,
   RequiredStringMap,
   StringMap,
-} from "../types/utils.types.js";
+} from "../types/utils.types.ts";
 
 /**
  * Removes a specified key from an object and returns a new object without that key.
@@ -46,8 +46,8 @@ export function convertToSnakeCase(obj: StringMap<unknown>) {
     const value = obj[key];
     const newKey = key.split("").reduce((total, current) => {
       const isLowerCase = current.toLowerCase() === current;
-      return isLowerCase ?
-          `${total}${current}`
+      return isLowerCase
+        ? `${total}${current}`
         : `${total}_${current.toLowerCase()}`;
     }, "");
 
@@ -168,9 +168,8 @@ export function mapObjectToArray<
 ): MappedReturnType[] {
   const mappedObject = Object.entries(obj) as [string, PureReturnType][];
   return (
-    mapper ?
-      mappedObject.map(mapper)
-    : mappedObject.map(([, value]) => value)) as MappedReturnType[];
+    mapper ? mappedObject.map(mapper) : mappedObject.map(([, value]) => value)
+  ) as MappedReturnType[];
 }
 export function mapPlaceholders<Key extends string>(
   items: Key[],

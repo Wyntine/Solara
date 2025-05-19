@@ -1,14 +1,14 @@
 import lodash from "lodash";
-import { config } from "./config.js";
+import { config } from "./config.ts";
 import { isArray, isObject } from "@wyntine/verifier";
-import { Language } from "../classes/language.js";
-import { languageLogger } from "./logger.js";
-import { readClassDirectory } from "../utils/readClassDirectory.js";
+import { Language } from "../classes/language.ts";
+import { languageLogger } from "./logger.ts";
+import { readClassDirectory } from "../utils/readClassDirectory.ts";
 import {
   getObjectSize,
   mapObject,
   removeMultipleKeys,
-} from "../utils/objects.js";
+} from "../utils/objects.ts";
 import {
   Locale,
   type APIApplicationCommandOptionChoice,
@@ -25,8 +25,8 @@ import type {
   LanguageSubcommandGroupTexts,
   LanguageSubcommandsOnlyTexts,
   LanguageSubcommandTexts,
-} from "../types/files.types.js";
-import type { StringMap } from "../types/utils.types.js";
+} from "../types/files.types.ts";
+import type { StringMap } from "../types/utils.types.ts";
 
 const languagesDir = "languages";
 
@@ -76,15 +76,14 @@ export function getLanguage<UseDefault extends boolean = false>(
   locale: Locale | undefined,
   useDefault?: UseDefault,
 ): GetLanguageReturn<UseDefault> {
-  const foundLang =
-    locale ?
-      languages.find((language) => language.languages.includes(locale))
+  const foundLang = locale
+    ? languages.find((language) => language.languages.includes(locale))
     : undefined;
 
   return (foundLang ??
-    (useDefault ? getDefaultLang() : (
-      undefined
-    ))) as GetLanguageReturn<UseDefault>;
+    (useDefault
+      ? getDefaultLang()
+      : undefined)) as GetLanguageReturn<UseDefault>;
 }
 
 /**
@@ -98,13 +97,14 @@ export function getLanguageByCode<UseDefault extends boolean = false>(
   code: string | undefined,
   useDefault?: UseDefault,
 ): GetLanguageReturn<UseDefault> {
-  const foundLang =
-    code ? languages.find((language) => language.code === code) : undefined;
+  const foundLang = code
+    ? languages.find((language) => language.code === code)
+    : undefined;
 
   return (foundLang ??
-    (useDefault ? getDefaultLang() : (
-      undefined
-    ))) as GetLanguageReturn<UseDefault>;
+    (useDefault
+      ? getDefaultLang()
+      : undefined)) as GetLanguageReturn<UseDefault>;
 }
 /**
  * Reads and returns an array of Language objects from the specified directory.
@@ -239,9 +239,8 @@ function compileOptionOnlyTexts(
   );
 
   return (
-    options ?
-      { ...newData, options }
-    : newData) as LanguageOptionsOnlyTexts<CompiledLanguageBaseCommandTexts>;
+    options ? { ...newData, options } : newData
+  ) as LanguageOptionsOnlyTexts<CompiledLanguageBaseCommandTexts>;
 }
 
 /**
@@ -321,9 +320,8 @@ function compileOptionTexts(
   }));
 
   return (
-    choices ?
-      { ...newData, choices }
-    : newData) as LanguageOptionTextData<CompiledLanguageBaseCommandTexts>;
+    choices ? { ...newData, choices } : newData
+  ) as LanguageOptionTextData<CompiledLanguageBaseCommandTexts>;
 }
 
 /**
@@ -344,9 +342,8 @@ function compileSubcommandTexts(
   );
 
   return (
-    options ?
-      { ...newSubcommand, options }
-    : newSubcommand) as LanguageSubcommandTexts<CompiledLanguageBaseCommandTexts>;
+    options ? { ...newSubcommand, options } : newSubcommand
+  ) as LanguageSubcommandTexts<CompiledLanguageBaseCommandTexts>;
 }
 
 /**
@@ -396,9 +393,10 @@ function compileDefaultLangChoices<Input>(input: Input): Input {
 
     if (isArray(data)) {
       const result = (
-        key === "choices" ?
-          data.map((choice) => ({ name: choice as string }))
-        : data.map(compileDefaultLangChoices)) as Input[keyof Input];
+        key === "choices"
+          ? data.map((choice) => ({ name: choice as string }))
+          : data.map(compileDefaultLangChoices)
+      ) as Input[keyof Input];
       return result;
     }
 

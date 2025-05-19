@@ -1,4 +1,4 @@
-import type { Replacer } from "../types/files.types.js";
+import type { Replacer } from "../types/files.types.ts";
 
 /**
  * Creates a replacer function that replaces placeholders in the given text with provided strings.

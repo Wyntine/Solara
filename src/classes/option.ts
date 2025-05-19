@@ -1,10 +1,10 @@
 import { isNumber } from "@wyntine/verifier";
-import { commandLogger } from "../handlers/logger.js";
+import { commandLogger } from "../handlers/logger.ts";
 import type {
   CommandOptionsData,
   CommandOptionsDataWithoutType,
-} from "../types/files.types.js";
-import { OptionTypes } from "../types/utils.types.js";
+} from "../types/files.types.ts";
+import { OptionTypes } from "../types/utils.types.ts";
 
 export class Option<Type extends OptionTypes = OptionTypes> {
   private settings: CommandOptionsData<Type>;

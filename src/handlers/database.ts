@@ -1,9 +1,9 @@
-import { Database } from "./database/database.js";
+import { Database } from "./database/database.ts";
 import {
   DatabaseType,
   type CooldownDatabase,
   type UserDatabase,
-} from "../types/utils.types.js";
+} from "../types/utils.types.ts";
 
 export const userDatabase = new Database<UserDatabase, DatabaseType.YAML>(
   DatabaseType.YAML,

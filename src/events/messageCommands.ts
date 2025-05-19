@@ -1,5 +1,5 @@
-import { Event } from "../classes/event.js";
-import { defaultCommandDetectionEvent } from "../handlers/defaultEvents.js";
+import { Event } from "../classes/event.ts";
+import { defaultCommandDetectionEvent } from "../handlers/defaultEvents.ts";
 
 export default new Event({
   category: "messageCreate",

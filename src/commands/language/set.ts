@@ -1,10 +1,10 @@
-import { CommandOptionConfig } from "../../classes/commandOptions.js";
-import { Option } from "../../classes/option.js";
-import { Subcommand } from "../../classes/subcommand.js";
-import { getLanguageByCode, getLanguages } from "../../handlers/language.js";
-import { errorEmbed, successEmbed } from "../../utils/embeds.js";
-import { strJoin } from "../../utils/strings.js";
-import { userDatabase } from "../../handlers/database.js";
+import { CommandOptionConfig } from "../../classes/commandOptions.ts";
+import { Option } from "../../classes/option.ts";
+import { Subcommand } from "../../classes/subcommand.ts";
+import { getLanguageByCode, getLanguages } from "../../handlers/language.ts";
+import { errorEmbed, successEmbed } from "../../utils/embeds.ts";
+import { strJoin } from "../../utils/strings.ts";
+import { userDatabase } from "../../handlers/database.ts";
 
 const languageOption = Option.createStringOption({
   required: true,
