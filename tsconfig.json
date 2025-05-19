@@ -7,11 +7,11 @@
     "moduleResolution": "NodeNext",
     "module": "NodeNext",
     "noEmit": true,
-    "types": ["node", "vitest/globals"],
+    "types": ["node", "vitest/globals", "./src/types/esm"],
     "lib": ["ESNext"],
     "resolveJsonModule": true,
     "inlineSourceMap": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "src/types/**/*.d.ts"]
 }
