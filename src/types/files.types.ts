@@ -341,10 +341,21 @@ export interface ConfigOptions {
   configVerification: ObjectVerifier;
 }
 
+//? Exported configs
+
 export interface BaseConfigData {
+  system: BaseConfigSystemData;
   bot: BaseConfigBotData;
   commands: BaseConfigCommandsData;
   logs: BaseConfigLogsData;
+}
+
+export interface BaseConfigSystemData {
+  hotReload: boolean;
+  registerOnReload: {
+    commands: boolean;
+    events: boolean;
+  };
 }
 
 export interface BaseConfigBotData {
