@@ -1,7 +1,7 @@
 import { client } from "../utils/client.ts";
 import { Event } from "../classes/event.ts";
 import { eventLogger } from "./logger.ts";
-import { readClassDirectory } from "../utils/readClassDirectory.ts";
+import { readClassDirectory } from "../utils/readClass.ts";
 import type { ClientEvents } from "discord.js";
 import type { Categories } from "../types/files.types.ts";
 

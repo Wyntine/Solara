@@ -1,9 +1,6 @@
 import { Command } from "../classes/command.ts";
 import { commandLogger } from "./logger.ts";
-import {
-  readClassFile,
-  scriptFileFilter,
-} from "../utils/readClassDirectory.ts";
+import { readClassFile, scriptFileFilter } from "../utils/readClass.ts";
 
 import {
   CommandType,

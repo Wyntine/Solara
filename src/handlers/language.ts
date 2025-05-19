@@ -3,7 +3,7 @@ import { config } from "./config.ts";
 import { isArray, isObject } from "@wyntine/verifier";
 import { Language } from "../classes/language.ts";
 import { languageLogger } from "./logger.ts";
-import { readClassDirectory } from "../utils/readClassDirectory.ts";
+import { readClassDirectory } from "../utils/readClass.ts";
 import {
   getObjectSize,
   mapObject,
