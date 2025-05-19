@@ -1,8 +1,6 @@
 import { Command } from "../classes/command.ts";
 import { commandLogger } from "./logger.ts";
 import {
-  baseDir,
-  dev,
   readClassFile,
   scriptFileFilter,
 } from "../utils/readClassDirectory.ts";
@@ -36,11 +34,12 @@ import {
 import { getCommandText } from "./language.ts";
 import { CommandHelper } from "../utils/commands.ts";
 import { isObject } from "@wyntine/verifier";
+import { baseDir } from "../globals.ts";
 
 let commands: Command[] = [];
 const commandsDir = "commands";
 
-const configFileName = `_config.${dev ? "ts" : "js"}`;
+const configFileName = `_config.ts`;
 
 export function getCommands(): Command[] {
   return commands;

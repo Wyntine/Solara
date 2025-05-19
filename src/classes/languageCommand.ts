@@ -9,7 +9,6 @@ import { isString } from "@wyntine/verifier";
 import { commandLogger } from "../handlers/logger.ts";
 import { basename } from "path";
 import { getCommandText } from "../handlers/language.ts";
-import { dev } from "../utils/readClassDirectory.ts";
 
 export class LanguageCommand {
   protected commandPath?: string;
@@ -125,6 +124,6 @@ export class LanguageCommand {
    * @throws If the command file name has not been set.
    */
   public getFileName(): string {
-    return basename(this.getFilePath(), dev ? ".ts" : ".js");
+    return basename(this.getFilePath(), ".ts");
   }
 }
