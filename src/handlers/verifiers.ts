@@ -1,6 +1,12 @@
 import { ItemTypes, ObjectVerifier } from "@wyntine/verifier";
 
 export const configVerifier = new ObjectVerifier()
+  .addObject("system", {
+    verifierData: (object) =>
+      object.addBoolean("hotReload").addObject("registerOnReload", {
+        verifierData: (obj) => obj.addBoolean("commands").addBoolean("events"),
+      }),
+  })
   .addObject("bot", {
     required: true,
     verifierData: (object) =>
