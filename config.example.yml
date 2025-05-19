@@ -1,3 +1,13 @@
+# Optional values are given with their default values.
+
+system:
+  # Requires custom Node.js build (https://github.com/Wyntine/node-patch) to work correctly.
+  # Unless, it will fallback to ESM import hack which may result in memory leak while the bot is online.
+  hotReload: false # Optional, reloads commands, events, and langauges on change
+  registerOnReload: # Optional, register commands or/and events on hot reload
+    # Registering commands on reload may result in being rate limited. Use with caution.
+    commands: false
+    events: false
 bot:
   token: "bot-token"
   defaultLanguage: "tr"
@@ -8,13 +18,13 @@ commands:
   registerOnStart: true # Optional, set true to register slash commands on start
 logs:
   warn:
-    invalidConfigExport: true # Empty or invalid command/subcommand group config
-    emptySubcommandGroup: true # No subcommand is suitable in a subcommand group
-    noRegister: true # Slash commands are not registered on start
-    noCooldown: true # No cooldown is set for given command
+    invalidConfigExport: true # Optional, "Empty or invalid command/subcommand group config" warning
+    emptySubcommandGroup: true # Optional, "No subcommand is suitable in a subcommand group" warning
+    noRegister: true # Optional, "Slash commands are not registered on start" warning
+    noCooldown: true # Optional, "No cooldown is set for given command" warning
   error:
-    noLangTexts: true # No language texts found for given command
-    invalidCommandExport: true # Invalid command/subcommand
-    configError: true # Config error
-    noDefaultExport: true # No default class export
-    wrongClass: true # Wrong class export
+    noLangTexts: true # Optional, "No language texts found for given command" error
+    invalidCommandExport: true # Optional, "Invalid command/subcommand" error
+    configError: true # Optional, "Config error" errpr
+    noDefaultExport: true # Optional, "No default class export" error
+    wrongClass: true # Optional, "Wrong class export" error
