@@ -5,14 +5,11 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "start": "NODE_ENV=production node dist/index.js",
-    "dev": "tsx src/index.ts",
-    "build": "tsc",
-    "prepack": "run-s lint build",
+    "start": "node --experimental-transform-types ./src/index.ts",
     "lint": "run-s typeCheck eslint",
     "eslint": "eslint --fix ./src",
     "typeCheck": "tsc --project ./ --noEmit",
-    "test": "tsx ./src/test.ts",
+    "test": "tsx src/test.ts",
     "test:vitest": "vitest",
     "test:coverage": "vitest --coverage",
     "test:run": "vitest run"
@@ -35,7 +32,6 @@
     "@wyntine/prettier-config": "^1.1.1",
     "npm-run-all": "^4.1.5",
     "prettier-eslint": "^16.4.2",
-    "tsx": "^4.19.4",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.1",
     "vitest": "^3.1.3"

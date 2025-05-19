@@ -7,10 +7,6 @@ yarn.lock
 bun.lock
 coverage
 
-# Build files
-
-dist
-
 # Extra files
 
 config.yml
