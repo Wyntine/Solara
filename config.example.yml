@@ -15,7 +15,7 @@ bot:
     - "dev-id"
 commands:
   defaultPrefix: ">"
-  registerOnStart: true # Optional, set true to register slash commands on start
+  registerOnStart: true # Optional, set false to disable registering slash commands on start
 logs:
   warn:
     hotReloadWithoutPatch: true # Optional, "Hot reload is enabled, but you do not have custom Node.js build..." warning

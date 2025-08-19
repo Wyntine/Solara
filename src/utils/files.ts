@@ -13,16 +13,16 @@ export async function reloadFile<Output>(importPath: string): Promise<Output> {
   const now = Date.now();
 
   const finalImportPath =
-    hotReload && !import.meta.cache
-      ? `${absoluteImportPath}?t=${now}`
-      : absoluteImportPath;
+    hotReload && !import.meta.cache ?
+      `${absoluteImportPath}?t=${now.toString()}`
+    : absoluteImportPath;
 
   if (hotReload && import.meta.cache) {
     const filePath = import.meta.resolve(absoluteImportPath);
     import.meta.cache.delete(filePath);
   }
 
-  return await import(finalImportPath);
+  return (await import(finalImportPath)) as Output;
 }
 
 export function checkHotReloadStatus(): void {

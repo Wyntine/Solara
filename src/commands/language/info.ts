@@ -12,8 +12,9 @@ export default new Subcommand({
     const userLanguage =
       getLanguageByCode(userDatabase.get(userId)?.language)?.name ??
       texts.notDefined;
-    const accountLanguage = isSlashInteraction(interaction)
-      ? getLanguage(interaction.locale)?.name ?? texts.unknown
+    const accountLanguage =
+      isSlashInteraction(interaction) ?
+        (getLanguage(interaction.locale)?.name ?? texts.unknown)
       : texts.unknown;
 
     const infoMessage = strJoin([

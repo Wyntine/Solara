@@ -43,7 +43,8 @@ export async function readClassDirectory<
       // .replace(".ts", ".js")
       .replaceAll("\\", "/");
 
-    const fileImport: unknown = await import(fileImportPath);
+    console.log(`file://${fileImportPath}`);
+    const fileImport: unknown = await import(`file://${fileImportPath}`);
 
     if (!isObject(fileImport) || !("default" in fileImport)) {
       logger.error(`No default export in "${loggedPath}"`);
@@ -92,7 +93,7 @@ export async function readClassFile<
       // .replace(".ts", ".js")
       .replaceAll("\\", "/");
 
-    const fileImport: unknown = await import(fileImportPath);
+    const fileImport: unknown = await import(`file://${fileImportPath}`);
 
     if (!isObject(fileImport) || !(key in fileImport)) return;
 

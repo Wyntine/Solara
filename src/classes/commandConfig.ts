@@ -14,6 +14,7 @@ export class CommandConfig<Type extends CommandType = CommandType.Combined> {
   public excludedGuilds: string[];
   public developerOnly: boolean;
   public enabled: boolean;
+  // TODO: Add this while registering commands.
   public accessAreas: InteractionContextType[];
 
   constructor(

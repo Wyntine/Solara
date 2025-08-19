@@ -1,10 +1,6 @@
-import type Module from "module";
-
 // TODO: Improve the typings in the future and look deeper into Node.js internal ESM library code.
 
-interface ImportAttributes {
-  [key: string]: string;
-}
+type ImportAttributes = Record<string, string>;
 
 interface ModuleOutputSync {
   readonly __proto__: null;
@@ -25,9 +21,9 @@ interface ModuleJob {
   readonly instantiated: Promise<unknown>;
   readonly module: ModuleWrap;
 
-  public ensurePhase(phase: number): void;
-  public runSync(parent): ModuleOutputSync;
-  public run(isEntryPoint: boolean): ModuleOutputAsync;
+  ensurePhase(phase: number): void;
+  runSync(parent): ModuleOutputSync;
+  run(isEntryPoint: boolean): ModuleOutputAsync;
 }
 
 interface ModuleRecord {

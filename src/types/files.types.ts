@@ -352,10 +352,12 @@ export interface BaseConfigData {
 
 export interface BaseConfigSystemData {
   hotReload: boolean;
-  registerOnReload: {
-    commands: boolean;
-    events: boolean;
-  };
+  registerOnReload: BaseConfigSystemRegisterOnReloadData;
+}
+
+export interface BaseConfigSystemRegisterOnReloadData {
+  commands: boolean;
+  events: boolean;
 }
 
 export interface BaseConfigBotData {
